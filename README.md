@@ -110,3 +110,5 @@ Destinations `crystal-cave` and `old-mine` have rewards. `blocked-pass` is the p
 
 
 See [docs/API.md](docs/API.md) for contract details.
+
+See [docs/QUALITY.md](docs/QUALITY.md) for our quality goals and team decisions.
