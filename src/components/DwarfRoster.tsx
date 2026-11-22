@@ -1,11 +1,7 @@
 import { jobLabel } from "../simulation";
 import type { Dwarf, JobType } from "../types";
 
-const jobs: Exclude<JobType, null>[] = [
-  "woodcutting",
-  "mining",
-  "farming",
-];
+const jobs: Exclude<JobType, null>[] = ["woodcutting", "mining", "farming"];
 
 interface Props {
   dwarves: Dwarf[];
@@ -37,10 +33,7 @@ export function DwarfRoster({ dwarves, onAssign }: Props) {
             : "Generalist";
 
           return (
-            <article
-              className={isAway ? "dwarf away" : "dwarf"}
-              key={dwarf.id}
-            >
+            <article className={isAway ? "dwarf away" : "dwarf"} key={dwarf.id}>
               <div className="portrait">
                 {dwarf.icon}
                 <i className={dwarf.status} />
@@ -56,10 +49,7 @@ export function DwarfRoster({ dwarves, onAssign }: Props) {
                   value={dwarf.assignment ?? ""}
                   disabled={isAway}
                   onChange={(event) =>
-                    onAssign(
-                      dwarf.id,
-                      (event.target.value || null) as JobType,
-                    )
+                    onAssign(dwarf.id, (event.target.value || null) as JobType)
                   }
                 >
                   <option value="">Unassigned</option>
@@ -71,7 +61,10 @@ export function DwarfRoster({ dwarves, onAssign }: Props) {
                 </select>
               </div>
 
-              <span className="status">{dwarf.status}</span>
+              <div className="badges">
+                <span className="status">{dwarf.status}</span>
+                {dwarf.hungry && <span className="status hungry">Hungry</span>}
+              </div>
             </article>
           );
         })}
