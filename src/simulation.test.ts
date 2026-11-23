@@ -6,9 +6,11 @@ import {
   departExpedition,
   endExpedition,
   equipTool,
+  resumeAfterReload,
   returnTool,
   startCraft,
 } from "./simulation";
+import { parseSave } from "./storage";
 import type { ColonyState, Dwarf, Resources } from "./types";
 
 const dwarf = (overrides: Partial<Dwarf> = {}): Dwarf => ({
@@ -33,6 +35,15 @@ const colony = (
   dwarves,
   forgeTask: null,
 });
+
+const roundTrip = (value: unknown) => JSON.parse(JSON.stringify(value));
+
+const validSave = () =>
+  roundTrip({
+    version: 1,
+    colony: colony(5, [dwarf()]),
+    activities: [{ id: "a1", day: 1, message: "The forge fires are lit." }],
+  });
 
 describe("colony simulation", () => {
   it("produces assigned resources and feeds the company", () => {
@@ -223,5 +234,55 @@ describe("colony simulation", () => {
     expect(endExpedition(away, "d1", rewards).resources).toEqual(
       away.resources,
     );
+  });
+
+  it("accepts a valid save", () => {
+    const save = validSave();
+    expect(parseSave(save)).toEqual(save);
+  });
+
+  it("rejects corrupt or incompatible saves", () => {
+    const save = validSave();
+    const withDwarf = (changes: object) => ({
+      ...save,
+      colony: {
+        ...save.colony,
+        dwarves: [{ ...save.colony.dwarves[0], ...changes }],
+      },
+    });
+
+    expect(parseSave(null)).toBeNull();
+    expect(parseSave({ ...save, version: 99 })).toBeNull();
+    expect(
+      parseSave({
+        ...save,
+        colony: {
+          ...save.colony,
+          resources: { ...save.colony.resources, food: -1 },
+        },
+      }),
+    ).toBeNull();
+    expect(parseSave(withDwarf({ status: "sleeping" }))).toBeNull();
+    expect(parseSave(withDwarf({ status: "crafting" }))).toBeNull(); // crafting without a forge task
+    expect(parseSave({ ...save, activities: [{ id: 1 }] })).toBeNull();
+  });
+
+  it("brings a lost expedition home empty-handed after a reload", () => {
+    const state = colony(5, [dwarf({ status: "expedition" })]);
+    const { colony: resumed, notes } = resumeAfterReload(state);
+    expect(resumed.dwarves[0].status).toBe("working");
+    expect(resumed.resources).toEqual(state.resources);
+    expect(notes).toHaveLength(1);
+    expect(notes[0].tone).toBe("warning");
+  });
+
+  it("keeps a forge task running after a reload", () => {
+    const state: ColonyState = {
+      ...colony(5, [dwarf({ status: "crafting" })]),
+      forgeTask: { recipeId: "tool", crafterId: "d1", readyOnDay: 3 },
+    };
+    const { colony: resumed, notes } = resumeAfterReload(state);
+    expect(resumed).toBe(state);
+    expect(notes[0].message).toContain("ready on day 3");
   });
 });

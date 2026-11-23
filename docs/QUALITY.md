@@ -82,3 +82,7 @@ Dwarfhold is a small single-player browser game, built and maintained by a two-p
 | D4 | Synchronous in-flight guard (`useRef`) against repeated clicks; one expedition at a time | Q1, Q2 | `ColonyProvider.tsx` |
 | D4 | An equipped tool travels with the dwarf | Q2, Q3 | test "…with the rewards and their tool" |
 | D4 | Rewards are validated: only known resources with positive whole numbers | Q1 | test "ignores unknown or negative rewards" |
+| D5 | Saved data is parsed as `unknown` and validated field by field (no type assertion as validation); invalid data starts a new game with a warning | Q1, Q3 | `parseSave`, test "rejects corrupt…" |
+| D5 | Save format has a version number; a different version counts as incompatible | Q1 | `SAVE_VERSION` |
+| D5 | Interrupted expedition returns empty-handed; interrupted forge task continues | Q1, Q3 | `resumeAfterReload`, tests "…after a reload" |
+| D5 | One storage module; load once (lazy initializer), save in an effect; pause is not saved | Q2 | `storage.ts`, `ColonyProvider.tsx` |

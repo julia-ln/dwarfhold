@@ -66,6 +66,18 @@ The starter destinations:
 
 The short delay is deliberate, so that expedition behavior provides a realistic place to reason about promises, loading state, failures, and consistency between worker and resource state.
 
+### Save and restore
+
+The colony (day, resources, dwarves, equipped tools, the forge task) and the chronicle are saved in the browser's local storage after every change and restored after a refresh. The game always resumes running; a pause is not saved.
+
+Saved data is validated when it is loaded. Unreadable, incomplete, or incompatible data (for example from an older version) is ignored: a new settlement starts and the chronicle shows a warning.
+
+Tasks interrupted by a refresh follow two rules:
+- **Expedition:** the request is lost, so the dwarf returns **empty-handed**.
+- **Forge task:** it **continues** and finishes on its original ready day.
+
+Both outcomes are reported in the chronicle after the reload.
+
 ## Current starter features
 
 - Three named dwarves with assignments, status, and optional specialization.

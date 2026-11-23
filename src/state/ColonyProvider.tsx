@@ -15,9 +15,11 @@ import {
   returnTool,
   startCraft,
   type RecipeId,
+  resumeAfterReload,
 } from "../simulation";
 import type { Activity, ColonyState, JobType } from "../types";
 import { ColonyContext, type ColonyContextValue } from "./ColonyContext";
+import { loadGame, saveGame } from "../storage";
 
 const initialState: ColonyState = {
   day: 12,
@@ -65,18 +67,55 @@ const initialState: ColonyState = {
   forgeTask: null,
 };
 
+const welcome: Activity = {
+  id: "welcome",
+  day: initialState.day,
+  message: "The forge fires are lit. Stonehome wakes.",
+};
+
+/** Reads the save once at startup and applies the refresh policy. */
+function loadStartup(): { colony: ColonyState; activities: Activity[] } {
+  const loaded = loadGame();
+
+  if (loaded.status === "empty") {
+    return { colony: initialState, activities: [welcome] };
+  }
+
+  if (loaded.status === "invalid") {
+    return {
+      colony: initialState,
+      activities: [
+        {
+          id: "invalid-save",
+          day: initialState.day,
+          message:
+            "The saved records were unreadable. A new settlement begins.",
+          tone: "warning",
+        },
+        welcome,
+      ],
+    };
+  }
+
+  const { colony, notes } = resumeAfterReload(loaded.save.colony);
+  const restored: Activity[] = [
+    { message: `The hold restores its records (day ${colony.day}).` },
+    ...notes,
+  ].map((note) => ({ id: crypto.randomUUID(), day: colony.day, ...note }));
+
+  return {
+    colony,
+    activities: [...restored, ...loaded.save.activities].slice(0, 6),
+  };
+}
+
 export function ColonyProvider({ children }: { children: ReactNode }) {
-  const [colony, setColony] = useState(initialState);
+  const [startup] = useState(loadStartup);
+  const [colony, setColony] = useState(startup.colony);
   const [paused, setPaused] = useState(false);
   const [expeditionPending, setExpeditionPending] = useState(false);
   const expeditionInFlight = useRef(false);
-  const [activities, setActivities] = useState<Activity[]>([
-    {
-      id: "welcome",
-      day: 12,
-      message: "The forge fires are lit. Stonehome wakes.",
-    },
-  ]);
+  const [activities, setActivities] = useState(startup.activities);
 
   useEffect(() => {
     if (paused) return;
@@ -88,6 +127,10 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
 
     return () => window.clearInterval(timer);
   }, [paused]);
+
+  useEffect(() => {
+    saveGame(colony, activities);
+  }, [colony, activities]);
 
   function assignDwarf(id: string, assignment: JobType) {
     const dwarf = colony.dwarves.find((item) => item.id === id);
@@ -161,7 +204,9 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
 
     try {
       const result = await beginExpedition(dwarfId, destination);
-      setColony((current) => endExpedition(current, dwarfId, result.rewards ?? {}));
+      setColony((current) =>
+        endExpedition(current, dwarfId, result.rewards ?? {}),
+      );
       addActivity(result.message, "good");
     } catch (error) {
       setColony((current) => endExpedition(current, dwarfId));
@@ -176,6 +221,11 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function resetGame() {
+    setColony(initialState);
+    setActivities([welcome]);
+  }
+
   const value: ColonyContextValue = {
     colony,
     paused,
@@ -187,6 +237,7 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
     unequip,
     forge,
     sendExpedition,
+    resetGame,
   };
 
   return <ColonyContext value={value}>{children}</ColonyContext>;

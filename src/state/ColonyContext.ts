@@ -13,6 +13,7 @@ export interface ColonyContextValue {
   unequip: (id: string) => void;
   forge: (recipeId: RecipeId, crafterId: string) => void;
   sendExpedition: (dwarfId: string, destination: string) => Promise<void>;
+  resetGame: () => void;
 }
 
 export const ColonyContext = createContext<ColonyContextValue | null>(null);

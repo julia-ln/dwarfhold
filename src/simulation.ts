@@ -1,11 +1,4 @@
-import type {
-  ColonyState,
-  Dwarf,
-  JobType,
-  RecipeId,
-  ResourceKey,
-  Resources,
-} from "./types";
+import type { Activity, ColonyState, Dwarf, JobType, RecipeId, ResourceKey, Resources } from "./types";
 
 export type { RecipeId } from "./types";
 
@@ -256,6 +249,34 @@ export function advanceDay(state: ColonyState): ColonyState {
 
   // 3. Forge: finish the task once its ready day is reached.
   return finishForgeTask({ ...state, day: state.day + 1, resources, dwarves });
+}
+
+type ReloadNote = { message: string; tone?: Activity["tone"] };
+
+/** Refresh policy: lost expeditions return empty-handed; forge tasks continue. */
+export function resumeAfterReload(state: ColonyState): { colony: ColonyState; notes: ReloadNote[] } {
+  let colony = state;
+  const notes: ReloadNote[] = [];
+
+  for (const dwarf of state.dwarves) {
+    if (dwarf.status === "expedition") {
+      colony = endExpedition(colony, dwarf.id);
+      notes.push({
+        message: `${dwarf.name} returned empty-handed: the expedition report was lost when the hold was reloaded.`,
+        tone: "warning",
+      });
+    }
+  }
+
+  const task = state.forgeTask;
+  if (task) {
+    const crafter = state.dwarves.find((dwarf) => dwarf.id === task.crafterId);
+    notes.push({
+      message: `${crafter?.name ?? "A crafter"} continues forging a ${recipes[task.recipeId].name} (ready on day ${task.readyOnDay}).`,
+    });
+  }
+
+  return { colony, notes };
 }
 
 export const jobLabel = (job: JobType) =>
