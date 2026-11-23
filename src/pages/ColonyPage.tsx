@@ -6,6 +6,7 @@ import {
   dailyProduction,
   jobLabel,
   production,
+  hasNewcomerJoined,
 } from "../simulation";
 import { useColony } from "../state/ColonyContext";
 import type { ResourceKey } from "../types";
@@ -86,16 +87,16 @@ export function ColonyPage() {
             </strong>
           </div>
           <p className="food-rule">
-            Each dwarf eats 1 food per day, travellers included. If the rations
-            run out, dwarves are fed in roster order. Unfed dwarves go hungry
+            Each resident eats 1 food per day, travellers included. If the rations
+            run out, residents are fed in roster order. Unfed residents go hungry
             and produce 1 less until they are fed again.
             <br />
-            An equipped tool adds 1 to its dwarf's daily output.
+            An equipped tool adds 1 to its resident's daily output.
           </p>
           {hungryCount > 0 ? (
             <p className="food-rule short">
               Rations are empty. {hungryCount}{" "}
-              {hungryCount === 1 ? "dwarf is" : "dwarves are"} hungry.
+              {hungryCount === 1 ? "resident is" : "residents are"} hungry.
             </p>
           ) : (
             runsShort && (
@@ -142,6 +143,12 @@ export function ColonyPage() {
               <option value="blocked-pass">Blocked Pass</option>
             </select>
           </label>
+
+          {!hasNewcomerJoined(colony) && (
+            <p className="rumour">
+              Rumour: something stirs in the deep tunnels of the Old Mine.
+            </p>
+          )}
 
           <button
             disabled={expeditionPending || !scoutCanTravel}

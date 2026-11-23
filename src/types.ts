@@ -2,6 +2,7 @@ export type ResourceKey = "wood" | "stone" | "food" | "tools" | "weapons";
 export type JobType = "woodcutting" | "mining" | "farming" | null;
 export type DwarfStatus = "idle" | "working" | "expedition" | "crafting";
 export type RecipeId = "tool" | "weapon";
+export type Species = "dwarf" | "kobold";
 
 export interface Resources {
   wood: number;
@@ -21,6 +22,7 @@ export interface Dwarf {
   specialty?: Exclude<JobType, null>;
   hungry: boolean;
   hasTool: boolean;
+  species: Species;
 }
 
 export interface ForgeTask {

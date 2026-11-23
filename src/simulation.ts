@@ -1,12 +1,47 @@
-import type { Activity, ColonyState, Dwarf, JobType, RecipeId, ResourceKey, Resources } from "./types";
+import type {
+  Activity,
+  ColonyState,
+  Dwarf,
+  JobType,
+  RecipeId,
+  ResourceKey,
+  Resources,
+  Species,
+} from "./types";
 
 export type { RecipeId } from "./types";
 
-export const production: Record<Exclude<JobType, null>, Partial<Resources>> = {
-  woodcutting: { wood: 3 },
-  mining: { stone: 2 },
-  farming: { food: 4 },
+type Job = Exclude<JobType, null>;
+
+export interface SpeciesTraits {
+  label: string;
+  production: Record<Job, Partial<Resources>>;
+  /** Faster (or slower) forging per recipe; missing recipes use the recipe's own days. */
+  forgeDays?: Partial<Record<RecipeId, number>>;
+}
+
+export const speciesTraits: Record<Species, SpeciesTraits> = {
+  dwarf: {
+    label: "Dwarf",
+    production: {
+      woodcutting: { wood: 3 },
+      mining: { stone: 2 },
+      farming: { food: 4 },
+    },
+  },
+  kobold: {
+    label: "Kobold",
+    production: {
+      woodcutting: { wood: 2 },
+      mining: { stone: 4 },
+      farming: { food: 2 },
+    },
+    forgeDays: { weapon: 1 },
+  },
 };
+
+/** Dwarf rates. The job cards use it to know which resource a job produces. */
+export const production = speciesTraits.dwarf.production;
 
 export const HUNGER_PENALTY = 1;
 export const TOOL_BONUS = 1;
@@ -19,7 +54,7 @@ export function dailyOutput(dwarf: Dwarf): Partial<Resources> {
   const penalty = dwarf.hungry ? HUNGER_PENALTY : 0;
   const output: Partial<Resources> = {};
   for (const [resource, amount] of Object.entries(
-    production[dwarf.assignment],
+    speciesTraits[dwarf.species].production[dwarf.assignment],
   )) {
     output[resource as keyof Resources] = Math.max(
       0,
@@ -27,6 +62,12 @@ export function dailyOutput(dwarf: Dwarf): Partial<Resources> {
     );
   }
   return output;
+}
+
+/** What this resident would produce per day in a job, including species, tool and hunger. */
+export function jobRate(dwarf: Dwarf, job: Exclude<JobType, null>): number {
+  const output = dailyOutput({ ...dwarf, assignment: job, status: "working" });
+  return Object.values(output)[0] ?? 0;
 }
 
 /** Total production of the whole company for one day. */
@@ -72,6 +113,14 @@ export const recipes: Record<RecipeId, Recipe> = {
   },
 };
 
+/** How many days this crafter needs for a recipe (kobolds forge weapons faster). */
+export function craftDays(crafter: Dwarf, recipeId: RecipeId): number {
+  return (
+    speciesTraits[crafter.species].forgeDays?.[recipeId] ??
+    recipes[recipeId].days
+  );
+}
+
 export function canAfford(
   resources: Resources,
   cost: Partial<Resources>,
@@ -102,7 +151,8 @@ export function startCraft(
   recipeId: RecipeId,
   crafterId: string,
 ): ColonyState {
-  if (!canStartCraft(state, recipeId, crafterId)) return state;
+  const crafter = state.dwarves.find((dwarf) => dwarf.id === crafterId);
+  if (!crafter || !canStartCraft(state, recipeId, crafterId)) return state;
 
   const recipe = recipes[recipeId];
   const resources = { ...state.resources };
@@ -117,7 +167,11 @@ export function startCraft(
       (dwarf): Dwarf =>
         dwarf.id === crafterId ? { ...dwarf, status: "crafting" } : dwarf,
     ),
-    forgeTask: { recipeId, crafterId, readyOnDay: state.day + recipe.days },
+    forgeTask: {
+      recipeId,
+      crafterId,
+      readyOnDay: state.day + craftDays(crafter, recipeId),
+    },
   };
 }
 
@@ -228,6 +282,32 @@ export function endExpedition(
   };
 }
 
+export const NEWCOMER_DESTINATION = "old-mine";
+
+export const newcomer: Dwarf = {
+  id: "kobold-1",
+  name: "Skritch",
+  title: "Tunnel Delver",
+  icon: "🦎",
+  species: "kobold",
+  specialty: "mining",
+  assignment: null,
+  status: "idle",
+  hungry: false,
+  hasTool: false,
+};
+
+/** Derived, not stored: residents never leave, so this is enough for "only once". */
+export function hasNewcomerJoined(state: ColonyState): boolean {
+  return state.dwarves.some((dwarf) => dwarf.id === newcomer.id);
+}
+
+/** After a successful expedition: Skritch joins once, and only from the Old Mine. */
+export function welcomeNewcomer(state: ColonyState, destination: string): ColonyState {
+  if (destination !== NEWCOMER_DESTINATION || hasNewcomerJoined(state)) return state;
+  return { ...state, dwarves: [...state.dwarves, newcomer] };
+}
+
 export function advanceDay(state: ColonyState): ColonyState {
   const resources = { ...state.resources };
 
@@ -254,7 +334,10 @@ export function advanceDay(state: ColonyState): ColonyState {
 type ReloadNote = { message: string; tone?: Activity["tone"] };
 
 /** Refresh policy: lost expeditions return empty-handed; forge tasks continue. */
-export function resumeAfterReload(state: ColonyState): { colony: ColonyState; notes: ReloadNote[] } {
+export function resumeAfterReload(state: ColonyState): {
+  colony: ColonyState;
+  notes: ReloadNote[];
+} {
   let colony = state;
   const notes: ReloadNote[] = [];
 
