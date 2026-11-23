@@ -1,0 +1,71 @@
+# Quality Goals
+
+Dwarfhold is a small single-player browser game, built and maintained by a two-person team under exam conditions. We chose three quality goals that fit this situation. They are listed in priority order: when two goals conflict, the higher one wins.
+
+| # | Goal | In one sentence |
+|---|---|---|
+| Q1 | Consistent game state | The colony never reaches an impossible state. |
+| Q2 | Testability and simplicity | The rules are easy to test, review, and explain. |
+| Q3 | Understandable rules | The player can see why something happens. |
+
+## Q1 – Consistent game state
+
+**Why it matters:** In a resource game, every decision is based on the numbers on screen. Invalid states, such as negative food, a dwarf in two places, or rewards counted twice, break the game silently and are hard to notice. D1, D2, D4 and D5 require consistency explicitly.
+
+**Decisions:**
+- Game rules are pure functions in `src/simulation.ts` (`advanceDay`, `dailyOutput`, `dailyProduction`, `canTravel`). The same input always gives the same output.
+- Fixed rules instead of chance: dwarves are fed in roster order, so a shortage always hits the same dwarves.
+- State is updated immutably with functional setters (`setColony(current => …)`). Because `advanceDay` is pure, React Strict Mode's double invocation in development produces the same result.
+- Rules are enforced in `ColonyProvider` (`assignDwarf`, `sendExpedition`), not only by disabled UI controls.
+- A dwarf has exactly one `status`, so working and travelling at the same time is impossible by construction.
+- We store only what cannot be derived. `hungry` is stored because it depends on yesterday's meal; production totals, hungry counts, and warnings are computed during render.
+
+**Trade-off:** Some checks exist twice, once in the UI for convenience and once in the logic for correctness. We accept this small duplication.
+
+**How we evaluate it:**
+- Unit tests for the invariants in `src/simulation.test.ts`: food never drops below 0, idle and travelling dwarves produce nothing, unfed dwarves become hungry, hungry or absent dwarves cannot travel.
+- Planned: rewards are applied exactly once (D4), and corrupt saves fall back safely (D5).
+- A manual scenario check before every pull request.
+
+## Q2 – Testability and simplicity
+
+**Why it matters:** We are two developers with limited time, and both of us must be able to explain every line in the exam. Simple code is faster to review, test, and defend.
+
+**Decisions:**
+- Clear layers: components render the UI, `ColonyProvider` owns state and actions, `simulation.ts` holds the game rules, and `api.ts` handles HTTP calls.
+- `useState` and context instead of a state-management library. No new dependencies without a team decision. We will switch to `useReducer` only if state transitions become scattered.
+- Derived values are computed during render: no `useEffect` for derived state, and no `useMemo` without a measured need.
+
+**Trade-off:** Fewer abstractions mean some repetition, for example the chronicle entries in the provider. We accept this until it causes real problems.
+
+**How we evaluate it:**
+- Quality gates before every pull request: `npm run test` and `npm run build` (including the type check) must pass.
+- Every new game rule gets at least one unit test.
+- Every pull request is reviewed by the other team member before merging.
+
+## Q3 – Understandable rules
+
+**Why it matters:** Players can only make good decisions if they understand the consequences. D1 ("explained in the interface"), D3 ("who is crafting and when") and D6 ("differences visible") require this. Hidden rules feel like bugs.
+
+**Decisions:**
+- The Shift Ledger uses the same `dailyProduction` function as the simulation, so the forecast always matches what actually happens.
+- Each dwarf shows a status tag and, when needed, a Hungry tag. The ledger warns before and during a food shortage.
+- Blocked actions are disabled and explain why (for example, a hungry scout).
+- All rules are described in the README.
+
+**Trade-off:** More text and space in the interface. We keep each explanation to one short line.
+
+**How we evaluate it:**
+- The ledger forecast matches the actual resource change on the next day.
+- Every disabled control shows a reason.
+- A person new to the game plays for five minutes and can explain why a dwarf is hungry.
+
+## Decision log
+
+| Req. | Decision | Goal | Evidence |
+|---|---|---|---|
+| D1 | Only working dwarves produce; travellers still eat | Q1 | `dailyOutput`, test "travelling dwarf…" |
+| D1 | Shortage: fed in roster order, unfed dwarves are hungry and produce 1 less | Q1, Q3 | `advanceDay`, tests "roster order", "hungry" |
+| D1 | "1 less" instead of "half": no rounding, adds up cleanly with the +1 tool bonus (D2) | Q2, Q3 | README "Food shortage" |
+| D1 | Hungry or absent dwarves cannot travel (`canTravel`), enforced in the provider | Q1 | `canTravel`, test "only lets present, fed dwarves travel" |
+| D1 | The ledger shows real totals from `dailyProduction`; shortage messages are derived, not stored | Q1, Q3 | `ColonyPage.tsx` |
