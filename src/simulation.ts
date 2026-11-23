@@ -308,6 +308,48 @@ export function welcomeNewcomer(state: ColonyState, destination: string): Colony
   return { ...state, dwarves: [...state.dwarves, newcomer] };
 }
 
+export const RAID_DESTINATION = "howling-depths";
+export const DEFENSE_THRESHOLD = 3;
+
+/** After a successful expedition to the Howling Depths, raiders attack the hold. */
+export function raidAfterExpedition(state: ColonyState, destination: string): ColonyState {
+  if (destination !== RAID_DESTINATION) return state;
+
+  const { wood, stone, food, weapons } = state.resources;
+
+  // Enough weapons: the raid is repelled, and the weapons break.
+  if (weapons >= DEFENSE_THRESHOLD) {
+    return {
+      ...state,
+      resources: { ...state.resources, weapons: weapons - DEFENSE_THRESHOLD },
+      lastRaid: {
+        day: state.day,
+        defended: true,
+        weaponsLost: DEFENSE_THRESHOLD,
+        loot: { wood: 0, stone: 0, food: 0 },
+      },
+    };
+  }
+
+  // Not enough weapons: the raiders take half of wood, stone, and food (rounded down).
+  const loot = {
+    wood: Math.floor(wood / 2),
+    stone: Math.floor(stone / 2),
+    food: Math.floor(food / 2),
+  };
+
+  return {
+    ...state,
+    resources: {
+      ...state.resources,
+      wood: wood - loot.wood,
+      stone: stone - loot.stone,
+      food: food - loot.food,
+    },
+    lastRaid: { day: state.day, defended: false, weaponsLost: 0, loot },
+  };
+}
+
 export function advanceDay(state: ColonyState): ColonyState {
   const resources = { ...state.resources };
 

@@ -7,6 +7,8 @@ import {
   jobLabel,
   production,
   hasNewcomerJoined,
+  DEFENSE_THRESHOLD,
+  RAID_DESTINATION,
 } from "../simulation";
 import { useColony } from "../state/ColonyContext";
 import type { ResourceKey } from "../types";
@@ -30,6 +32,8 @@ export function ColonyPage() {
   const hungryCount = colony.dwarves.filter((dwarf) => dwarf.hungry).length;
   const scout = colony.dwarves.find((dwarf) => dwarf.id === expeditionDwarf);
   const scoutCanTravel = scout !== undefined && canTravel(scout);
+  const raid = colony.lastRaid;
+  const weapons = colony.resources.weapons;
 
   return (
     <div className="dashboard">
@@ -87,9 +91,9 @@ export function ColonyPage() {
             </strong>
           </div>
           <p className="food-rule">
-            Each resident eats 1 food per day, travellers included. If the rations
-            run out, residents are fed in roster order. Unfed residents go hungry
-            and produce 1 less until they are fed again.
+            Each resident eats 1 food per day, travellers included. If the
+            rations run out, residents are fed in roster order. Unfed residents
+            go hungry and produce 1 less until they are fed again.
             <br />
             An equipped tool adds 1 to its resident's daily output.
           </p>
@@ -106,6 +110,24 @@ export function ColonyPage() {
             )
           )}
         </section>
+        {raid && (
+          <section
+            className={`panel raid-report ${raid.defended ? "defended" : "looted"}`}
+          >
+            <header>
+              <div>
+                <small>RAID REPORT</small>
+                <h2>{raid.defended ? "Raid repelled" : "Stores looted"}</h2>
+              </div>
+              <span>day {raid.day}</span>
+            </header>
+            <p>
+              {raid.defended
+                ? `The hold's ${raid.weaponsLost} weapons drove the raiders off and broke in the fight.`
+                : `Without ${DEFENSE_THRESHOLD} weapons, the raiders took ${raid.loot.wood} wood, ${raid.loot.stone} stone and ${raid.loot.food} food.`}
+            </p>
+          </section>
+        )}
       </section>
 
       <aside className="side-stack">
@@ -141,12 +163,27 @@ export function ColonyPage() {
               <option value="crystal-cave">Crystal Cave</option>
               <option value="old-mine">The Old Mine</option>
               <option value="blocked-pass">Blocked Pass</option>
+              <option value="howling-depths">Howling Depths ⚠</option>
             </select>
           </label>
 
           {!hasNewcomerJoined(colony) && (
             <p className="rumour">
               Rumour: something stirs in the deep tunnels of the Old Mine.
+            </p>
+          )}
+
+          {destination === RAID_DESTINATION && (
+            <p
+              className={
+                weapons >= DEFENSE_THRESHOLD
+                  ? "raid-warning ready"
+                  : "raid-warning"
+              }
+            >
+              Raiders may follow the scout home. Defense needs{" "}
+              {DEFENSE_THRESHOLD} weapons, which are used up (you have {weapons}
+              ).
             </p>
           )}
 

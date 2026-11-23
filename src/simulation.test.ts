@@ -11,6 +11,7 @@ import {
   returnTool,
   startCraft,
   welcomeNewcomer,
+  raidAfterExpedition,
 } from "./simulation";
 import { parseSave } from "./storage";
 import type { ColonyState, Dwarf, Resources } from "./types";
@@ -37,6 +38,7 @@ const colony = (
   resources: { wood: 0, stone: 0, food, tools: 0, weapons: 0, ...extra },
   dwarves,
   forgeTask: null,
+  lastRaid: null,
 });
 
 const roundTrip = (value: unknown) => JSON.parse(JSON.stringify(value));
@@ -346,5 +348,45 @@ describe("colony simulation", () => {
     expect(jobRate(kobold, "mining")).toBe(4);
     expect(jobRate({ ...kobold, hasTool: true }, "mining")).toBe(5);
     expect(jobRate({ ...kobold, hasTool: true, hungry: true }, "mining")).toBe(4);
+  });
+
+    it("only raids after the Howling Depths", () => {
+    const state = colony(10, [dwarf()], { wood: 10, stone: 10 });
+    expect(raidAfterExpedition(state, "crystal-cave")).toBe(state);
+  });
+
+  it("repels the raid with 3 weapons, which break", () => {
+    const state = colony(10, [dwarf()], { wood: 10, stone: 10, weapons: 3 });
+    const next = raidAfterExpedition(state, "howling-depths");
+    expect(next.resources).toEqual({ ...state.resources, weapons: 0 });
+    expect(next.lastRaid).toEqual({
+      day: 1,
+      defended: true,
+      weaponsLost: 3,
+      loot: { wood: 0, stone: 0, food: 0 },
+    });
+  });
+
+  it("loses half of wood, stone and food without enough weapons", () => {
+    const state = colony(7, [dwarf()], { wood: 15, stone: 9, weapons: 2 });
+    const next = raidAfterExpedition(state, "howling-depths");
+    expect(next.resources).toMatchObject({ wood: 8, stone: 5, food: 4, weapons: 2 });
+    expect(next.lastRaid).toMatchObject({ defended: false, loot: { wood: 7, stone: 4, food: 3 } });
+  });
+
+  it("never loots below zero", () => {
+    const next = raidAfterExpedition(colony(0, [dwarf()]), "howling-depths");
+    expect(next.resources).toMatchObject({ wood: 0, stone: 0, food: 0 });
+    expect(next.lastRaid?.loot).toEqual({ wood: 0, stone: 0, food: 0 });
+  });
+
+  it("loads saves without a raid report and rejects broken ones", () => {
+    const save = validSave();
+    const oldColony = { ...save.colony };
+    delete oldColony.lastRaid;
+    expect(parseSave({ ...save, colony: oldColony })?.colony.lastRaid).toBeNull();
+
+    const broken = { ...save, colony: { ...save.colony, lastRaid: { day: 1, defended: "yes" } } };
+    expect(parseSave(broken)).toBeNull();
   });
 });
