@@ -12,6 +12,7 @@ import {
   startCraft,
   welcomeNewcomer,
   raidAfterExpedition,
+  completeExpedition,
 } from "./simulation";
 import { parseSave } from "./storage";
 import type { ColonyState, Dwarf, Resources } from "./types";
@@ -343,14 +344,20 @@ describe("colony simulation", () => {
     expect(parseSave(dragon)).toBeNull();
   });
 
-    it("shows the real job rate including species, tool and hunger", () => {
-    const kobold = dwarf({ species: "kobold", assignment: null, status: "idle" });
+  it("shows the real job rate including species, tool and hunger", () => {
+    const kobold = dwarf({
+      species: "kobold",
+      assignment: null,
+      status: "idle",
+    });
     expect(jobRate(kobold, "mining")).toBe(4);
     expect(jobRate({ ...kobold, hasTool: true }, "mining")).toBe(5);
-    expect(jobRate({ ...kobold, hasTool: true, hungry: true }, "mining")).toBe(4);
+    expect(jobRate({ ...kobold, hasTool: true, hungry: true }, "mining")).toBe(
+      4,
+    );
   });
 
-    it("only raids after the Howling Depths", () => {
+  it("only raids after the Howling Depths", () => {
     const state = colony(10, [dwarf()], { wood: 10, stone: 10 });
     expect(raidAfterExpedition(state, "crystal-cave")).toBe(state);
   });
@@ -370,8 +377,16 @@ describe("colony simulation", () => {
   it("loses half of wood, stone and food without enough weapons", () => {
     const state = colony(7, [dwarf()], { wood: 15, stone: 9, weapons: 2 });
     const next = raidAfterExpedition(state, "howling-depths");
-    expect(next.resources).toMatchObject({ wood: 8, stone: 5, food: 4, weapons: 2 });
-    expect(next.lastRaid).toMatchObject({ defended: false, loot: { wood: 7, stone: 4, food: 3 } });
+    expect(next.resources).toMatchObject({
+      wood: 8,
+      stone: 5,
+      food: 4,
+      weapons: 2,
+    });
+    expect(next.lastRaid).toMatchObject({
+      defended: false,
+      loot: { wood: 7, stone: 4, food: 3 },
+    });
   });
 
   it("never loots below zero", () => {
@@ -384,9 +399,34 @@ describe("colony simulation", () => {
     const save = validSave();
     const oldColony = { ...save.colony };
     delete oldColony.lastRaid;
-    expect(parseSave({ ...save, colony: oldColony })?.colony.lastRaid).toBeNull();
+    expect(
+      parseSave({ ...save, colony: oldColony })?.colony.lastRaid,
+    ).toBeNull();
 
-    const broken = { ...save, colony: { ...save.colony, lastRaid: { day: 1, defended: "yes" } } };
+    const broken = {
+      ...save,
+      colony: { ...save.colony, lastRaid: { day: 1, defended: "yes" } },
+    };
     expect(parseSave(broken)).toBeNull();
+  });
+
+  it("ignores a late expedition result when the scout is no longer away", () => {
+    const fresh = colony(10, [dwarf()], { wood: 10, stone: 10 });
+    expect(
+      completeExpedition(fresh, "d1", { stone: 6 }, "howling-depths"),
+    ).toBe(fresh);
+    expect(completeExpedition(fresh, "d1", { stone: 12 }, "old-mine")).toBe(
+      fresh,
+    );
+  });
+
+  it("brings the scout home before the raid", () => {
+    const away = colony(10, [dwarf({ status: "expedition" })], {
+      wood: 10,
+      stone: 10,
+    });
+    const next = completeExpedition(away, "d1", { stone: 6 }, "howling-depths");
+    expect(next.dwarves[0].status).toBe("working");
+    expect(next.lastRaid?.loot.stone).toBe(8); // (10 + 6) / 2
   });
 });

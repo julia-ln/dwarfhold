@@ -1,8 +1,8 @@
 # Dwarfhold
 
-Dwarfhold is a small browser-based colony and resource-management game. You are the warden of **Stonehome**, a new settlement beneath Emberpeak. Your three dwarves gather supplies, eat from the shared food stores, forge equipment, and explore locations beyond the hold.
+Dwarfhold is a small browser-based colony and resource-management game. You are the warden of **Stonehome**, a new settlement beneath Emberpeak. Your residents gather supplies, eat from the shared food stores, forge tools and weapons, and explore locations beyond the hold, where a new resident and dangerous raiders await.
 
-This is a partially completed starter for the Advanced Web Development practical exam. It is already playable, but it is not yet a finished game. Investigate its existing behavior and extend it according to the [Requirements](REQUIREMENTS.md).
+This project started from the starter for the Advanced Web Development practical exam and implements all requirements D1–D7 from [REQUIREMENTS.md](REQUIREMENTS.md). Our quality goals and team decisions are documented in [docs/QUALITY.md](docs/QUALITY.md).
 
 ## How the game works
 
@@ -17,17 +17,19 @@ Each dwarf can have one of these local assignments:
 | Mushroom Farm | 4 food |
 | Unassigned | No production |
 
-At the end of each day, the colony consumes one food for every dwarf. With the initial company of three dwarves, daily meals therefore consume three food. The Shift Ledger shows current assignments and expected production.
+The table shows dwarf rates; Skritch the kobold has his own (see *A new resident*).
 
-Use the assignment dropdown beside a dwarf to change their work. A changed assignment affects subsequent simulation days.
+At the end of each day, the colony consumes one food for every resident. With the initial company of three dwarves, daily meals therefore consume three food. The Shift Ledger shows current assignments and expected production.
+
+Use the assignment dropdown beside a resident to change their work. A changed assignment affects subsequent simulation days.
 
 ### Food shortage
 
-Production happens first, then meals. Only dwarves who are present and working produce; a dwarf on an expedition or at the forge produces nothing until they return to their job. Every dwarf eats one food per day, travellers included (they carry provisions).
+Production happens first, then meals. Only residents who are present and working produce; a resident on an expedition or at the forge produces nothing until they return to their job. Every resident eats one food per day, travellers included (they carry provisions).
 
-If the stores run out, dwarves are fed in roster order. A dwarf who could not be fed becomes **hungry** and produces one unit less per day (never below zero) until they are fed again. Food never drops below zero.
+If the stores run out, residents are fed in roster order. A resident who could not be fed becomes **hungry** and produces one unit less per day (never below zero) until they are fed again. Food never drops below zero.
 
-A hungry dwarf is too weak to travel or forge and cannot start either task until they are fed again. Hunger only prevents starting a task: a dwarf who goes hungry while crafting or travelling finishes that task, then produces one unit less until fed.
+A hungry resident is too weak to travel or forge and cannot start either task until they are fed again. Hunger only prevents starting a task: a resident who goes hungry while crafting or travelling finishes that task, then produces one unit less until fed.
 
 ### Resources
 
@@ -39,7 +41,7 @@ The shared inventory contains:
 - **Tools**, produced at the forge or discovered on expeditions.
 - **Weapons**, forged at the Ember Forge and stored for the hold's defense.
 
-A tool can be equipped to one dwarf from the roster ("Equip tool" / "Return tool"). While that dwarf works a local job, they produce **one extra unit per day** (e.g. Woodcutting 3 → 4). A dwarf carries at most one tool. Equipping takes a tool from the stores, and returning puts it back. Tools have no durability. A dwarf on an expedition cannot equip or return a tool.
+A tool can be equipped to one resident from the roster ("Equip tool" / "Return tool"). While that resident works a local job, they produce **one extra unit per day** (e.g. Woodcutting 3 → 4). A resident carries at most one tool. Equipping takes a tool from the stores, and returning puts it back. Tools have no durability. A resident on an expedition cannot equip or return a tool.
 
 ### Ember Forge
 
@@ -54,7 +56,7 @@ Open the **Forge** page, choose a crafter, and press **Forge tool** or **Forge w
 
 ### Expeditions
 
-The expedition panel sends one eligible dwarf to a destination. A dwarf is eligible when they are present, not busy at the forge, and not hungry. Only one expedition can be underway at a time. While the request is in progress, the dwarf is away: they produce nothing (but still eat), cannot be reassigned or start forging, and keep any equipped tool, which travels with them. Every outcome brings the dwarf back: a success adds the destination's rewards exactly once, while a failure, an unreachable server, or no answer within 10 seconds adds nothing and is reported in the chronicle.
+The expedition panel sends one eligible resident to a destination. A resident is eligible when they are present, not busy at the forge, and not hungry. Only one expedition can be underway at a time. While the request is in progress, the resident is away: they produce nothing (but still eat), cannot be reassigned or start forging, and keep any equipped tool, which travels with them. Every outcome brings the resident back: a success adds the destination's rewards exactly once, while a failure, an unreachable server, or no answer within 10 seconds adds nothing and is reported in the chronicle.
 
 The destinations:
 
@@ -92,29 +94,30 @@ Failed, timed-out, or reload-interrupted expeditions never lead to a raid. The e
 
 ### Save and restore
 
-The colony (day, resources, dwarves, equipped tools, the forge task) and the chronicle are saved in the browser's local storage after every change and restored after a refresh. The game always resumes running; a pause is not saved.
+The colony (day, resources, residents, equipped tools, the forge task) and the chronicle are saved in the browser's local storage after every change and restored after a refresh. The game always resumes running; a pause is not saved.
 
 Saved data is validated when it is loaded. Unreadable, incomplete, or incompatible data (for example from an older version) is ignored: a new settlement starts and the chronicle shows a warning.
 
 Tasks interrupted by a refresh follow two rules:
-- **Expedition:** the request is lost, so the dwarf returns **empty-handed**.
+- **Expedition:** the request is lost, so the resident returns **empty-handed**.
 - **Forge task:** it **continues** and finishes on its original ready day.
 
 Both outcomes are reported in the chronicle after the reload.
 
-## Current starter features
+The **New settlement** button in the footer starts a new game after a confirmation. It is disabled while an expedition is underway, so a late expedition result can never affect the new settlement.
 
-- Three named dwarves with assignments, status, and optional specialization.
-- Woodcutting, mining, and farming jobs.
-- An automatic eight-second simulation tick with pause/resume.
-- Shared wood, stone, food, and tool inventories.
-- Daily food consumption.
-- One interactive forge recipe.
-- Separate colony and forge routes sharing the same running simulation.
-- A delayed local expedition API with success and failure outcomes.
-- A recent-activity chronicle.
-- Responsive fantasy-themed React interface.
-- A small Vitest suite for pure simulation behavior.
+## Features
+
+- Three dwarves with jobs, status, and optional specialization; **Skritch**, a kobold with his own production and crafting traits, joins after the Old Mine.
+- A daily simulation (one day every eight seconds, pause/resume) with production, meals in roster order, and a visible **hunger** rule.
+- Five shared resources: wood, stone, food, tools, and weapons.
+- **Tools** that can be equipped (+1 output) and **weapons** stored for defense.
+- **Timed forging** with a chosen crafter, one task at a time.
+- **Resilient expeditions**: rewards exactly once, every failure or timeout brings the scout back.
+- **Raids** after the Howling Depths, repelled with 3 weapons or looting half of wood, stone, and food.
+- **Save and restore** in local storage with validation and safe fallback.
+- A recent-activity chronicle and a responsive fantasy-themed React interface.
+- A Vitest suite for the pure game rules.
 
 ## Run locally
 
@@ -148,13 +151,13 @@ Destinations crystal-cave, old-mine, and howling-depths have rewards. `blocked-p
 - `src/state/ColonyProvider.tsx` owns shared colony state, the simulation timer, and game actions.
 - `src/state/ColonyContext.ts` exposes the shared state through `useColony`.
 - `src/pages/` contains the shared layout, colony page, and forge page.
-- `src/simulation.ts` contains the production table and daily simulation transition.
+- `src/simulation.ts` contains all game rules as pure functions: production, meals and hunger, tools, forging, expeditions, the newcomer, and raids.
 - `src/types.ts` defines workers, jobs, statuses, resources, and activity records.
 - `src/api.ts` contains the expedition HTTP request.
 - `src/components/` contains the roster, resource display, and shared chronicle.
+- `src/storage.ts` saves and validates the game in local storage.
 - `server/index.js` implements the local expedition service.
-
+- `docs/QUALITY.md` documents our quality goals and the decision log.
 
 See [docs/API.md](docs/API.md) for contract details.
-
 See [docs/QUALITY.md](docs/QUALITY.md) for our quality goals and team decisions.

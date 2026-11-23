@@ -24,7 +24,7 @@ Dwarfhold is a small single-player browser game, built and maintained by a two-p
 
 **How we evaluate it:**
 - Unit tests for the invariants in `src/simulation.test.ts`: food never drops below 0, idle and travelling dwarves produce nothing, unfed dwarves become hungry, hungry or absent dwarves cannot travel.
-- Planned: rewards are applied exactly once (D4), and corrupt saves fall back safely (D5).
+- Tests for rewards applied exactly once (D4), safe fallback for corrupt or incompatible saves (D5), and late expedition results being ignored after a new settlement.
 - A manual scenario check before every pull request.
 
 ## Q2 – Testability and simplicity
@@ -49,7 +49,7 @@ Dwarfhold is a small single-player browser game, built and maintained by a two-p
 
 **Decisions:**
 - The Shift Ledger uses the same `dailyProduction` function as the simulation, so the forecast always matches what actually happens.
-- Each dwarf shows a status tag and, when needed, a Hungry tag. The ledger warns before and during a food shortage.
+- Each resident shows a status tag and, when needed, a Hungry tag. The ledger warns before and during a food shortage.
 - Blocked actions are disabled and explain why (for example, a hungry scout).
 - All rules are described in the README.
 
@@ -59,6 +59,12 @@ Dwarfhold is a small single-player browser game, built and maintained by a two-p
 - The ledger forecast matches the actual resource change on the next day.
 - Every disabled control shows a reason.
 - A person new to the game plays for five minutes and can explain why a dwarf is hungry.
+
+## Evaluation results
+
+- **Q1:** 37 unit tests cover the invariants (food never below 0, exactly-once rewards, forge and expedition rules, raid loot never below 0, save validation). Every pull request was also checked manually in the browser, including failure cases (Blocked Pass, offline, timeout, corrupt saves). A final check found one inconsistency (a late expedition result could affect a new settlement), which we fixed and covered with a test.
+- **Q2:** `npm run test` and `npm run build` passed before every merge. All game rules live in `simulation.ts` as pure functions; no state library or new dependency was added. Every pull request was reviewed by the other team member.
+- **Q3:** The ledger forecast, job dropdowns, forge durations, and raid warning are all derived from the same functions as the simulation, so displayed numbers match what happens. Disabled controls show a reason (hint text or tooltip).
 
 ## Decision log
 
@@ -95,3 +101,4 @@ Dwarfhold is a small single-player browser game, built and maintained by a two-p
 | D7 | Raid only in the success chain: failures, timeouts, and reload-lost expeditions never trigger it | Q1 | `sendExpedition` |
 | D7 | Threshold 3 weapons, used up on defense; otherwise half of wood/stone/food (rounded down) is looted, never below 0 | Q1, Q3 | tests "repels…", "loses half…", "never loots below zero" |
 | D7 | Old saves stay compatible: a missing raid report means "no raid yet"; broken reports are rejected | Q1 | `parseColony`, test "loads saves without a raid report…" |
+| Final | A late expedition result is ignored if the scout is no longer away; "New settlement" is disabled during an expedition | Q1 | `completeExpedition`, test "ignores a late expedition result…" |

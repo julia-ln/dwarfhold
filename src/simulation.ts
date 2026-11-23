@@ -350,6 +350,22 @@ export function raidAfterExpedition(state: ColonyState, destination: string): Co
   };
 }
 
+/**
+ * A successful expedition: the scout comes home with the rewards, then the newcomer
+ * may join and raiders may attack. If the scout is not away (e.g. after "New settlement"),
+ * the late result is ignored completely.
+ */
+export function completeExpedition(
+  state: ColonyState,
+  dwarfId: string,
+  rewards: Partial<Resources>,
+  destination: string,
+): ColonyState {
+  const home = endExpedition(state, dwarfId, rewards);
+  if (home === state) return state;
+  return raidAfterExpedition(welcomeNewcomer(home, destination), destination);
+}
+
 export function advanceDay(state: ColonyState): ColonyState {
   const resources = { ...state.resources };
 
