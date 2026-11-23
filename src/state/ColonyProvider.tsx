@@ -1,6 +1,18 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { beginExpedition } from "../api";
-import { advanceDay, canTravel, jobLabel } from "../simulation";
+import {
+  advanceDay,
+  canAfford,
+  canEquipTool,
+  canReturnTool,
+  canTravel,
+  craft,
+  equipTool,
+  jobLabel,
+  recipes,
+  returnTool,
+  type RecipeId,
+} from "../simulation";
 import type { Activity, ColonyState, JobType, ResourceKey } from "../types";
 import { ColonyContext, type ColonyContextValue } from "./ColonyContext";
 
@@ -11,6 +23,7 @@ const initialState: ColonyState = {
     stone: 9,
     food: 18,
     tools: 1,
+    weapons: 0,
   },
   dwarves: [
     {
@@ -22,6 +35,7 @@ const initialState: ColonyState = {
       status: "working",
       specialty: "mining",
       hungry: false,
+      hasTool: false,
     },
     {
       id: "dwarf-2",
@@ -32,6 +46,7 @@ const initialState: ColonyState = {
       status: "working",
       specialty: "woodcutting",
       hungry: false,
+      hasTool: false,
     },
     {
       id: "dwarf-3",
@@ -41,6 +56,7 @@ const initialState: ColonyState = {
       assignment: null,
       status: "idle",
       hungry: false,
+      hasTool: false,
     },
   ],
 };
@@ -93,40 +109,37 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  function craftTool() {
-    if (colony.resources.wood < 3) {
-      setActivities((current) => [
-        {
-          id: crypto.randomUUID(),
-          day: colony.day,
-          message: "The forge needs more timber.",
-          tone: "warning" as const,
-        },
-        ...current,
-      ]);
-      return;
-    }
-
-    setColony((current) => ({
-      ...current,
-      resources: {
-        ...current.resources,
-        wood: current.resources.wood - 3,
-        stone: current.resources.stone - 2,
-        tools: current.resources.tools + 1,
-      },
-    }));
+  function addActivity(message: string, tone?: Activity["tone"]) {
     setActivities((current) =>
       [
-        {
-          id: crypto.randomUUID(),
-          day: colony.day,
-          message: "A sturdy iron tool joins the stores.",
-          tone: "good" as const,
-        },
+        { id: crypto.randomUUID(), day: colony.day, message, tone },
         ...current,
       ].slice(0, 6),
     );
+  }
+
+  function equip(id: string) {
+    const dwarf = colony.dwarves.find((item) => item.id === id);
+    if (!dwarf || !canEquipTool(dwarf, colony.resources.tools)) return;
+
+    setColony((current) => equipTool(current, id));
+    addActivity(`${dwarf.name} takes a tool from the stores.`);
+  }
+
+  function unequip(id: string) {
+    const dwarf = colony.dwarves.find((item) => item.id === id);
+    if (!dwarf || !canReturnTool(dwarf)) return;
+
+    setColony((current) => returnTool(current, id));
+    addActivity(`${dwarf.name} returns a tool to the stores.`);
+  }
+
+  function forge(recipeId: RecipeId) {
+    const recipe = recipes[recipeId];
+    if (!canAfford(colony.resources, recipe.cost)) return;
+
+    setColony((current) => craft(current, recipeId));
+    addActivity(`A new ${recipe.name} joins the stores.`, "good");
   }
 
   async function sendExpedition(dwarfId: string, destination: string) {
@@ -208,7 +221,9 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
     expeditionPending,
     togglePaused: () => setPaused((value) => !value),
     assignDwarf,
-    craftTool,
+    equip,
+    unequip,
+    forge,
     sendExpedition,
   };
 

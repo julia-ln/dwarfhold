@@ -4,6 +4,7 @@ import { useColony } from "../state/ColonyContext";
 
 export function Layout() {
   const { colony, paused, togglePaused } = useColony();
+  const equippedTools = colony.dwarves.filter((dwarf) => dwarf.hasTool).length;
 
   return (
     <main>
@@ -40,7 +41,7 @@ export function Layout() {
         <NavLink to="/forge">Forge</NavLink>
       </nav>
 
-      <ResourceBar resources={colony.resources} />
+      <ResourceBar resources={colony.resources} equippedTools={equippedTools} />
       <Outlet />
 
       <footer>

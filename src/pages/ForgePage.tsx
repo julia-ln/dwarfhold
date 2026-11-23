@@ -1,24 +1,52 @@
+import { Fragment } from "react";
 import { Chronicle } from "../components/Chronicle";
+import { resourceDetails } from "../components/ResourceBar";
+import { canAfford, recipes, type RecipeId } from "../simulation";
 import { useColony } from "../state/ColonyContext";
+import type { ResourceKey } from "../types";
+
+const recipeIds: RecipeId[] = ["tool", "weapon"];
 
 export function ForgePage() {
-  const { activities, craftTool } = useColony();
+  const { colony, activities, forge } = useColony();
 
   return (
     <div className="forge-layout">
       <section className="panel forge">
         <div>
           <small>EMBER FORGE</small>
-          <h2>Craft a tool</h2>
-          <p>Equip the hold for future work.</p>
+          <h2>Craft equipment</h2>
+          <p>
+            Tools add 1 to a working dwarf's output. Weapons are stored for the
+            hold's defense.
+          </p>
         </div>
-        <div className="recipe">
-          <span>3 🪵</span>
-          <i>+</i>
-          <span>2 🪨</span>
-          <i>→</i>
-          <span>1 ⚒️</span>
-          <button onClick={craftTool}>Forge tool</button>
+
+        <div className="recipes">
+          {recipeIds.map((id) => {
+            const recipe = recipes[id];
+
+            return (
+              <div className="recipe" key={id}>
+                {Object.entries(recipe.cost).map(([resource, amount], index) => (
+                  <Fragment key={resource}>
+                    {index > 0 && <i>+</i>}
+                    <span>
+                      {amount} {resourceDetails[resource as ResourceKey][0]}
+                    </span>
+                  </Fragment>
+                ))}
+                <i>→</i>
+                <span>1 {resourceDetails[recipe.output][0]}</span>
+                <button
+                  disabled={!canAfford(colony.resources, recipe.cost)}
+                  onClick={() => forge(id)}
+                >
+                  Forge {recipe.name}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </section>
 

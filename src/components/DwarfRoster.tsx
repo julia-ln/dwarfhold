@@ -1,14 +1,23 @@
-import { jobLabel } from "../simulation";
+import { canEquipTool, canReturnTool, jobLabel } from "../simulation";
 import type { Dwarf, JobType } from "../types";
 
 const jobs: Exclude<JobType, null>[] = ["woodcutting", "mining", "farming"];
 
 interface Props {
   dwarves: Dwarf[];
+  toolsInStore: number;
   onAssign: (id: string, job: JobType) => void;
+  onEquip: (id: string) => void;
+  onUnequip: (id: string) => void;
 }
 
-export function DwarfRoster({ dwarves, onAssign }: Props) {
+export function DwarfRoster({
+  dwarves,
+  toolsInStore,
+  onAssign,
+  onEquip,
+  onUnequip,
+}: Props) {
   const presentDwarves = dwarves.filter(
     (dwarf) => dwarf.status !== "expedition",
   ).length;
@@ -59,11 +68,37 @@ export function DwarfRoster({ dwarves, onAssign }: Props) {
                     </option>
                   ))}
                 </select>
+                {dwarf.hasTool ? (
+                  <button
+                    className="tool-button"
+                    disabled={!canReturnTool(dwarf)}
+                    title={isAway ? "Away on an expedition" : undefined}
+                    onClick={() => onUnequip(dwarf.id)}
+                  >
+                    Return tool
+                  </button>
+                ) : (
+                  <button
+                    className="tool-button"
+                    disabled={!canEquipTool(dwarf, toolsInStore)}
+                    title={
+                      isAway
+                        ? "Away on an expedition"
+                        : toolsInStore === 0
+                          ? "No tools in the stores"
+                          : undefined
+                    }
+                    onClick={() => onEquip(dwarf.id)}
+                  >
+                    Equip tool
+                  </button>
+                )}
               </div>
 
               <div className="badges">
                 <span className="status">{dwarf.status}</span>
                 {dwarf.hungry && <span className="status hungry">Hungry</span>}
+                {dwarf.hasTool && <span className="status tool">Tool</span>}
               </div>
             </article>
           );

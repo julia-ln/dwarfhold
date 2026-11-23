@@ -37,8 +37,9 @@ The shared inventory contains:
 - **Stone**, gathered by miners.
 - **Food**, gathered by farmers and consumed by the company.
 - **Tools**, produced at the forge or discovered on expeditions.
+- **Weapons**, forged at the Ember Forge and stored for the hold's defense.
 
-The starter does not yet give stored tools an additional production bonus or durability rule. They provide a small production-chain foundation that may be expanded by later requirements.
+A tool can be equipped to one dwarf from the roster ("Equip tool" / "Return tool"). While that dwarf works a local job, they produce **one extra unit per day** (e.g. Woodcutting 3 → 4). A dwarf carries at most one tool. Equipping takes a tool from the stores, and returning puts it back. Tools have no durability. A dwarf on an expedition cannot equip or return a tool.
 
 ### Ember Forge
 
@@ -46,9 +47,10 @@ The forge performs an immediate crafting action:
 
 ```text
 3 wood + 2 stone -> 1 tool
+2 wood + 3 stone -> 1 weapon
 ```
 
-Open the **Forge** page and press **Forge tool** to attempt the recipe. A successful craft removes the materials, adds a tool to the shared inventory, and records the result in the Hold Chronicle. Forging is separate from the automatic eight-second job production.
+Open the **Forge** page and press **Forge tool** or **Forge weapon**. A recipe can only be forged when all materials are in stock. A successful craft removes the materials, adds the item to the shared inventory, and records the result in the Hold Chronicle. Forging is separate from the automatic eight-second job production.
 
 ### Expeditions
 

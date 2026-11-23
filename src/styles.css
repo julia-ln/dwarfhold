@@ -9,3 +9,13 @@
 .food-rule.short { color: #d47459; font-weight: 600; }
 .expedition > p.travel-warning { color: #d47459; font-weight: 600; }
 .badges .status { align-self: flex-end; }
+.resource-bar { grid-template-columns: repeat(5, 1fr); }
+.tool-button { margin-top: 6px; background: transparent; color: #d9a34f; border: 1px solid #4d3f30; padding: 3px 8px; font: 600 10px "Barlow Condensed"; text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
+.tool-button:disabled { opacity: .4; cursor: default; }
+.status.tool { color: #d9a34f; border-color: #d9a34f; }
+.recipes { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+.recipe button:disabled { opacity: .5; cursor: default; }
+.resource-bar small { white-space: nowrap; }
+.forge { flex-direction: column; gap: 12px; }
+.recipe { padding-top: 10px; border-top: 1px solid #3b3023; }
+.recipe button { min-width: 110px; margin-left: auto; }
