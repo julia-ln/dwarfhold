@@ -5,6 +5,7 @@ import type {
   Dwarf,
   ForgeTask,
   Resources,
+  RaidReport,
 } from "./types";
 
 export const SAVE_KEY = "dwarfhold-save";
@@ -156,7 +157,32 @@ function parseColony(value: unknown): ColonyState | null {
   const expected = forgeTask ? [forgeTask.crafterId] : [];
   if (crafters.join() !== expected.join()) return null;
 
-  return { day: value.day as number, resources, dwarves, forgeTask };
+  // Older saves have no raid report yet; treat that as "no raid so far".
+  let lastRaid: RaidReport | null = null;
+  if (value.lastRaid !== undefined && value.lastRaid !== null) {
+    if (!isObject(value.lastRaid) || !isObject(value.lastRaid.loot))
+      return null;
+    const { day, defended, weaponsLost } = value.lastRaid;
+    const { wood, stone, food } = value.lastRaid.loot;
+    if (
+      !Number.isInteger(day) ||
+      typeof defended !== "boolean" ||
+      !isCount(weaponsLost) ||
+      !isCount(wood) ||
+      !isCount(stone) ||
+      !isCount(food)
+    ) {
+      return null;
+    }
+    lastRaid = {
+      day: day as number,
+      defended,
+      weaponsLost,
+      loot: { wood, stone, food },
+    };
+  }
+
+  return { day: value.day as number, resources, dwarves, forgeTask, lastRaid };
 }
 
 // ---- public API ----

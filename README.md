@@ -56,13 +56,14 @@ Open the **Forge** page, choose a crafter, and press **Forge tool** or **Forge w
 
 The expedition panel sends one eligible dwarf to a destination. A dwarf is eligible when they are present, not busy at the forge, and not hungry. Only one expedition can be underway at a time. While the request is in progress, the dwarf is away: they produce nothing (but still eat), cannot be reassigned or start forging, and keep any equipped tool, which travels with them. Every outcome brings the dwarf back: a success adds the destination's rewards exactly once, while a failure, an unreachable server, or no answer within 10 seconds adds nothing and is reported in the chronicle.
 
-The starter destinations:
+The destinations:
 
 | Destination | Current outcome |
 |---|---|
 | Crystal Cave | 8 stone and 1 tool |
 | The Old Mine | 12 stone and 2 wood |
 | Blocked Pass | A predictable failed expedition |
+| Howling Depths | 6 stone and 2 tools, then a raid (see Raids) |
 
 The short delay is deliberate, so that expedition behavior provides a realistic place to reason about promises, loading state, failures, and consistency between worker and resource state.
 
@@ -79,6 +80,15 @@ Kobolds differ from dwarves:
 | Mushroom Farm | 4 food | 2 food |
 
 Kobolds also forge **weapons in 1 day** instead of 2 (tools take 1 day for everyone). In every other respect Skritch follows the same rules as the dwarves: he eats one food per day (and is fed last), can go hungry, can carry a tool (+1), can travel and craft when free and fed, and is saved with the colony. The job dropdowns show each resident's own rate, and the forge shows the duration for the selected crafter.
+
+### Raids
+
+The **Howling Depths** hold an old armoury, but raiders follow every scout who returns from there **successfully**. They attack as soon as the scout is home:
+
+- With at least **3 weapons**, Stonehome repels the raid. The **3 weapons break** in the fight.
+- With fewer than 3 weapons, the raiders take **half of the stored wood, stone, and food** (rounded down). Tools and weapons are not taken.
+
+Failed, timed-out, or reload-interrupted expeditions never lead to a raid. The expedition panel warns about the raid and shows the current weapon count before you send a scout, and the **raid report** on the Colony page shows the outcome of the most recent raid.
 
 ### Save and restore
 
@@ -130,7 +140,7 @@ The web app runs at `http://localhost:5174`; its API runs at `http://localhost:4
 - `GET /api/health`
 - `POST /api/expeditions` with `{ "dwarfId": "dwarf-2", "destination": "crystal-cave" }`
 
-Destinations `crystal-cave` and `old-mine` have rewards. `blocked-pass` is the predictable failure case. Add `?fail=true` to force failure or `?latency=2500` to control delay. The delay is default to two seconds.
+Destinations crystal-cave, old-mine, and howling-depths have rewards. `blocked-pass` is the predictable failure case. Add `?fail=true` to force failure or `?latency=2500` to control delay. The delay is default to two seconds.
 
 ## Project orientation
 

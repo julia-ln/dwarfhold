@@ -32,3 +32,11 @@
 .expedition > p.rumour { color: #d9a34f; font-style: italic; }
 
 .forge p.forge-bonus { margin-top: 6px; color: #7fb77e; font-weight: 600; }
+
+.expedition > p.raid-warning { color: #d47459; font-weight: 600; }
+.expedition > p.raid-warning.ready { color: #d9a34f; }
+.raid-report p { margin: 0; padding: 12px 14px; font: 12px "Barlow Condensed"; color: #c2ad8e; }
+.raid-report.looted { border-color: #d47459; }
+.raid-report.looted h2 { color: #d47459; }
+.raid-report.defended { border-color: #7fb77e; }
+.raid-report.defended h2 { color: #7fb77e; }

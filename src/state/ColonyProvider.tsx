@@ -20,6 +20,8 @@ import {
   hasNewcomerJoined,
   NEWCOMER_DESTINATION,
   welcomeNewcomer,
+  RAID_DESTINATION,
+  raidAfterExpedition,
 } from "../simulation";
 import type { Activity, ColonyState, JobType } from "../types";
 import { ColonyContext, type ColonyContextValue } from "./ColonyContext";
@@ -72,6 +74,7 @@ const initialState: ColonyState = {
     },
   ],
   forgeTask: null,
+  lastRaid: null,
 };
 
 const welcome: Activity = {
@@ -215,8 +218,11 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
         destination === NEWCOMER_DESTINATION && !hasNewcomerJoined(colony);
 
       setColony((current) =>
-        welcomeNewcomer(
-          endExpedition(current, dwarfId, result.rewards ?? {}),
+        raidAfterExpedition(
+          welcomeNewcomer(
+            endExpedition(current, dwarfId, result.rewards ?? {}),
+            destination,
+          ),
           destination,
         ),
       );
@@ -225,6 +231,12 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
         addActivity(
           "A kobold named Skritch follows the scout out of the deep tunnels and joins Stonehome.",
           "good",
+        );
+      }
+      if (destination === RAID_DESTINATION) {
+        addActivity(
+          `Raiders followed ${dwarf.name} home from the Howling Depths! See the raid report.`,
+          "warning",
         );
       }
     } catch (error) {

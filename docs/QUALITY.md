@@ -91,3 +91,7 @@ Dwarfhold is a small single-player browser game, built and maintained by a two-p
 | D6 | Old saves stay compatible: a missing `species` means "dwarf"; unknown species are rejected | Q1 | `parseDwarf`, test "loads old saves…" |
 | D6 | Job dropdowns show each resident's own rate; forge shows the crafter's duration; a rumour hint names the destination | Q3 | `DwarfRoster.tsx`, `ForgePage.tsx`, `ColonyPage.tsx` |
 | D6 | Job dropdowns show the real rate (species, tool, hunger) via `jobRate`, which reuses `dailyOutput` | Q1, Q3 | `jobRate`, test "shows the real job rate…" |
+| D7 | The raid result is computed inside the state update from the current state and stored as `lastRaid`; the UI derives its report from it (no message built from the stale snapshot at departure) | Q1, Q3 | `raidAfterExpedition`, raid report panel |
+| D7 | Raid only in the success chain: failures, timeouts, and reload-lost expeditions never trigger it | Q1 | `sendExpedition` |
+| D7 | Threshold 3 weapons, used up on defense; otherwise half of wood/stone/food (rounded down) is looted, never below 0 | Q1, Q3 | tests "repels…", "loses half…", "never loots below zero" |
+| D7 | Old saves stay compatible: a missing raid report means "no raid yet"; broken reports are rejected | Q1 | `parseColony`, test "loads saves without a raid report…" |
