@@ -2,15 +2,16 @@ import { useEffect, useState, type ReactNode } from "react";
 import { beginExpedition } from "../api";
 import {
   advanceDay,
-  canAfford,
   canEquipTool,
   canReturnTool,
+  canStartCraft,
   canTravel,
-  craft,
   equipTool,
+  isFree,
   jobLabel,
   recipes,
   returnTool,
+  startCraft,
   type RecipeId,
 } from "../simulation";
 import type { Activity, ColonyState, JobType, ResourceKey } from "../types";
@@ -59,6 +60,7 @@ const initialState: ColonyState = {
       hasTool: false,
     },
   ],
+  forgeTask: null,
 };
 
 export function ColonyProvider({ children }: { children: ReactNode }) {
@@ -86,12 +88,12 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
 
   function assignDwarf(id: string, assignment: JobType) {
     const dwarf = colony.dwarves.find((item) => item.id === id);
-    if (!dwarf || dwarf.status === "expedition") return;
+    if (!dwarf || !isFree(dwarf)) return;
 
     setColony((current) => ({
       ...current,
       dwarves: current.dwarves.map((item) =>
-        item.id === id && item.status !== "expedition"
+        item.id === id && isFree(item)
           ? { ...item, assignment, status: assignment ? "working" : "idle" }
           : item,
       ),
@@ -134,12 +136,15 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
     addActivity(`${dwarf.name} returns a tool to the stores.`);
   }
 
-  function forge(recipeId: RecipeId) {
-    const recipe = recipes[recipeId];
-    if (!canAfford(colony.resources, recipe.cost)) return;
+  function forge(recipeId: RecipeId, crafterId: string) {
+    const crafter = colony.dwarves.find((item) => item.id === crafterId);
+    if (!crafter || !canStartCraft(colony, recipeId, crafterId)) return;
 
-    setColony((current) => craft(current, recipeId));
-    addActivity(`A new ${recipe.name} joins the stores.`, "good");
+    const recipe = recipes[recipeId];
+    setColony((current) => startCraft(current, recipeId, crafterId));
+    addActivity(
+      `${crafter.name} starts forging a ${recipe.name} (ready on day ${colony.day + recipe.days}).`,
+    );
   }
 
   async function sendExpedition(dwarfId: string, destination: string) {

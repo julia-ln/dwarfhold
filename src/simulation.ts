@@ -1,4 +1,6 @@
-import type { ColonyState, Dwarf, JobType, ResourceKey, Resources } from "./types";
+import type { ColonyState, Dwarf, JobType, RecipeId, ResourceKey, Resources } from "./types";
+
+export type { RecipeId } from "./types";
 
 export const production: Record<Exclude<JobType, null>, Partial<Resources>> = {
   woodcutting: { wood: 3 },
@@ -33,22 +35,31 @@ export function dailyProduction(dwarves: Dwarf[]): Resources {
   return total;
 }
 
-/** A dwarf may travel only if they are present and not hungry. */
-export function canTravel(dwarf: Dwarf): boolean {
-  return dwarf.status !== "expedition" && !dwarf.hungry;
+/** Present and not busy with another task. */
+export function isFree(dwarf: Dwarf): boolean {
+  return dwarf.status === "working" || dwarf.status === "idle";
 }
 
-export type RecipeId = "tool" | "weapon";
+/** A dwarf may travel only if they are free and not hungry. */
+export function canTravel(dwarf: Dwarf): boolean {
+  return isFree(dwarf) && !dwarf.hungry;
+}
+
+/** A dwarf may craft only if they are free and not hungry. */
+export function canCraft(dwarf: Dwarf): boolean {
+  return isFree(dwarf) && !dwarf.hungry;
+}
 
 export interface Recipe {
   name: string;
   cost: Partial<Resources>;
   output: ResourceKey;
+  days: number;
 }
 
 export const recipes: Record<RecipeId, Recipe> = {
-  tool: { name: "tool", cost: { wood: 3, stone: 2 }, output: "tools" },
-  weapon: { name: "weapon", cost: { wood: 2, stone: 3 }, output: "weapons" },
+  tool: { name: "tool", cost: { wood: 3, stone: 2 }, output: "tools", days: 1 },
+  weapon: { name: "weapon", cost: { wood: 2, stone: 3 }, output: "weapons", days: 2 },
 };
 
 export function canAfford(resources: Resources, cost: Partial<Resources>): boolean {
@@ -57,17 +68,55 @@ export function canAfford(resources: Resources, cost: Partial<Resources>): boole
   );
 }
 
-/** Pays the recipe cost and adds one item. Unaffordable recipes leave the state unchanged. */
-export function craft(state: ColonyState, recipeId: RecipeId): ColonyState {
-  const recipe = recipes[recipeId];
-  if (!canAfford(state.resources, recipe.cost)) return state;
+/** The forge is free, the crafter is eligible, and the materials are in stock. */
+export function canStartCraft(state: ColonyState, recipeId: RecipeId, crafterId: string): boolean {
+  const crafter = state.dwarves.find((dwarf) => dwarf.id === crafterId);
+  return (
+    state.forgeTask === null &&
+    crafter !== undefined &&
+    canCraft(crafter) &&
+    canAfford(state.resources, recipes[recipeId].cost)
+  );
+}
 
+/** Pays the materials and occupies the crafter. Invalid attempts leave the state unchanged. */
+export function startCraft(state: ColonyState, recipeId: RecipeId, crafterId: string): ColonyState {
+  if (!canStartCraft(state, recipeId, crafterId)) return state;
+
+  const recipe = recipes[recipeId];
   const resources = { ...state.resources };
   for (const [resource, amount] of Object.entries(recipe.cost)) {
     resources[resource as ResourceKey] -= amount ?? 0;
   }
-  resources[recipe.output] += 1;
-  return { ...state, resources };
+
+  return {
+    ...state,
+    resources,
+    dwarves: state.dwarves.map((dwarf): Dwarf =>
+      dwarf.id === crafterId ? { ...dwarf, status: "crafting" } : dwarf,
+    ),
+    forgeTask: { recipeId, crafterId, readyOnDay: state.day + recipe.days },
+  };
+}
+
+/** On the ready day: adds the item, sends the crafter back to work, and frees the forge. */
+function finishForgeTask(state: ColonyState): ColonyState {
+  const task = state.forgeTask;
+  if (!task || state.day < task.readyOnDay) return state;
+
+  const resources = { ...state.resources };
+  resources[recipes[task.recipeId].output] += 1;
+
+  return {
+    ...state,
+    resources,
+    dwarves: state.dwarves.map((dwarf): Dwarf =>
+      dwarf.id === task.crafterId
+        ? { ...dwarf, status: dwarf.assignment ? "working" : "idle" }
+        : dwarf,
+    ),
+    forgeTask: null,
+  };
 }
 
 /** A dwarf may take a tool if they carry none, are present, and the stores have one. */
@@ -127,7 +176,8 @@ export function advanceDay(state: ColonyState): ColonyState {
     return { ...dwarf, hungry: true };
   });
 
-  return { ...state, day: state.day + 1, resources, dwarves };
+  // 3. Forge: finish the task once its ready day is reached.
+  return finishForgeTask({ ...state, day: state.day + 1, resources, dwarves });
 }
 
 export const jobLabel = (job: JobType) =>

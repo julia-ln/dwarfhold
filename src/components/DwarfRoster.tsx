@@ -1,4 +1,4 @@
-import { canEquipTool, canReturnTool, jobLabel } from "../simulation";
+import { canEquipTool, canReturnTool, isFree, jobLabel } from "../simulation";
 import type { Dwarf, JobType } from "../types";
 
 const jobs: Exclude<JobType, null>[] = ["woodcutting", "mining", "farming"];
@@ -37,6 +37,11 @@ export function DwarfRoster({
       <div className="dwarf-list">
         {dwarves.map((dwarf) => {
           const isAway = dwarf.status === "expedition";
+          const busyReason = isAway
+            ? "Away on an expedition"
+            : dwarf.status === "crafting"
+              ? "Busy at the forge"
+              : undefined;
           const specialty = dwarf.specialty
             ? `Skilled in ${jobLabel(dwarf.specialty)}`
             : "Generalist";
@@ -56,7 +61,8 @@ export function DwarfRoster({
 
                 <select
                   value={dwarf.assignment ?? ""}
-                  disabled={isAway}
+                  disabled={!isFree(dwarf)}
+                  title={busyReason}
                   onChange={(event) =>
                     onAssign(dwarf.id, (event.target.value || null) as JobType)
                   }

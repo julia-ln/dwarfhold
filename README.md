@@ -23,11 +23,11 @@ Use the assignment dropdown beside a dwarf to change their work. A changed assig
 
 ### Food shortage
 
-Production happens first, then meals. Only dwarves who are present and working produce; a dwarf on an expedition produces nothing until they return. Every dwarf eats one food per day, travellers included (they carry provisions).
+Production happens first, then meals. Only dwarves who are present and working produce; a dwarf on an expedition or at the forge produces nothing until they return to their job. Every dwarf eats one food per day, travellers included (they carry provisions).
 
 If the stores run out, dwarves are fed in roster order. A dwarf who could not be fed becomes **hungry** and produces one unit less per day (never below zero) until they are fed again. Food never drops below zero.
 
-A hungry dwarf is too weak to travel and cannot be sent on an expedition until they are fed again.
+A hungry dwarf is too weak to travel or forge and cannot start either task until they are fed again. Hunger only prevents starting a task: a dwarf who goes hungry while crafting or travelling finishes that task, then produces one unit less until fed.
 
 ### Resources
 
@@ -43,14 +43,14 @@ A tool can be equipped to one dwarf from the roster ("Equip tool" / "Return tool
 
 ### Ember Forge
 
-The forge performs an immediate crafting action:
+Forging is colony work and takes time:
 
 ```text
-3 wood + 2 stone -> 1 tool
-2 wood + 3 stone -> 1 weapon
+3 wood + 2 stone -> 1 tool    (1 day)
+2 wood + 3 stone -> 1 weapon  (2 days)
 ```
 
-Open the **Forge** page and press **Forge tool** or **Forge weapon**. A recipe can only be forged when all materials are in stock. A successful craft removes the materials, adds the item to the shared inventory, and records the result in the Hold Chronicle. Forging is separate from the automatic eight-second job production.
+Open the **Forge** page, choose a crafter, and press **Forge tool** or **Forge weapon**. The crafter must be present, not busy, and not hungry, and all materials must be in stock. The materials are paid when forging starts. The forge handles one task at a time: while it runs, the crafter stops their job (but still eats), cannot travel or be reassigned, and the forge shows who is crafting and on which day the item is ready. When that day begins, the item is added to the stores and the crafter returns to their job.
 
 ### Expeditions
 

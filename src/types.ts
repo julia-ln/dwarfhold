@@ -1,6 +1,8 @@
 export type ResourceKey = "wood" | "stone" | "food" | "tools" | "weapons";
 export type JobType = "woodcutting" | "mining" | "farming" | null;
-export type DwarfStatus = "idle" | "working" | "expedition";
+export type DwarfStatus = "idle" | "working" | "expedition" | "crafting";
+export type RecipeId = "tool" | "weapon";
+
 export interface Resources {
   wood: number;
   stone: number;
@@ -21,10 +23,17 @@ export interface Dwarf {
   hasTool: boolean;
 }
 
+export interface ForgeTask {
+  recipeId: RecipeId;
+  crafterId: string;
+  readyOnDay: number;
+}
+
 export interface ColonyState {
   day: number;
   resources: Resources;
   dwarves: Dwarf[];
+  forgeTask: ForgeTask | null;
 }
 
 export interface ExpeditionResult {

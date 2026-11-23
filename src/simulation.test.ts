@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   advanceDay,
   canTravel,
-  craft,
   dailyOutput,
   equipTool,
   returnTool,
+  startCraft,
 } from "./simulation";
 import type { ColonyState, Dwarf, Resources } from "./types";
 
@@ -29,6 +29,7 @@ const colony = (
   day: 1,
   resources: { wood: 0, stone: 0, food, tools: 0, weapons: 0, ...extra },
   dwarves,
+  forgeTask: null,
 });
 
 describe("colony simulation", () => {
@@ -110,13 +111,72 @@ describe("colony simulation", () => {
     expect(equipTool(away, "d1")).toBe(away);
   });
 
-  it("forges a weapon from 2 wood and 3 stone", () => {
-    const next = craft(colony(0, [], { wood: 2, stone: 3 }), "weapon");
-    expect(next.resources).toMatchObject({ wood: 0, stone: 0, weapons: 1 });
+  it("starts forging: pays the cost, occupies the crafter, and sets the ready day", () => {
+    const next = startCraft(
+      colony(5, [dwarf()], { wood: 2, stone: 3 }),
+      "weapon",
+      "d1",
+    );
+    expect(next.resources).toMatchObject({ wood: 0, stone: 0, weapons: 0 });
+    expect(next.dwarves[0].status).toBe("crafting");
+    expect(next.forgeTask).toEqual({
+      recipeId: "weapon",
+      crafterId: "d1",
+      readyOnDay: 3,
+    });
   });
 
-  it("does not forge without enough materials", () => {
-    const state = colony(0, [], { wood: 3, stone: 0 });
-    expect(craft(state, "tool")).toBe(state);
+  it("refuses to start forging when the forge is busy, materials are missing, or the crafter is not free and fed", () => {
+    const busy: ColonyState = {
+      ...colony(5, [dwarf()], { wood: 9, stone: 9 }),
+      forgeTask: { recipeId: "tool", crafterId: "other", readyOnDay: 5 },
+    };
+    expect(startCraft(busy, "tool", "d1")).toBe(busy);
+
+    const poor = colony(5, [dwarf()], { wood: 3, stone: 0 });
+    expect(startCraft(poor, "tool", "d1")).toBe(poor);
+
+    const hungry = colony(5, [dwarf({ hungry: true })], { wood: 9, stone: 9 });
+    expect(startCraft(hungry, "tool", "d1")).toBe(hungry);
+
+    const away = colony(5, [dwarf({ status: "expedition" })], {
+      wood: 9,
+      stone: 9,
+    });
+    expect(startCraft(away, "tool", "d1")).toBe(away);
+  });
+
+  it("finishes the item on the ready day and sends the crafter back to work", () => {
+    const started = startCraft(
+      colony(10, [dwarf()], { wood: 2, stone: 3 }),
+      "weapon",
+      "d1",
+    );
+
+    const day2 = advanceDay(started);
+    expect(day2.forgeTask).not.toBeNull();
+    expect(day2.resources.wood).toBe(0); // crafting, so no woodcutting
+    expect(day2.resources.food).toBe(9); // but still eats
+
+    const day3 = advanceDay(day2);
+    expect(day3.resources.weapons).toBe(1);
+    expect(day3.dwarves[0].status).toBe("working");
+    expect(day3.forgeTask).toBeNull();
+  });
+
+  it("does not let a crafting dwarf travel", () => {
+    expect(canTravel(dwarf({ status: "crafting" }))).toBe(false);
+  });
+
+  it("keeps forging when the crafter goes hungry", () => {
+    const started = startCraft(
+      colony(0, [dwarf()], { wood: 3, stone: 2 }),
+      "tool",
+      "d1",
+    );
+    const next = advanceDay(started);
+    expect(next.dwarves[0].hungry).toBe(true);
+    expect(next.resources.tools).toBe(1);
+    expect(next.forgeTask).toBeNull();
   });
 });
