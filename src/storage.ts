@@ -1,5 +1,11 @@
 import { recipes } from "./simulation";
-import type { Activity, ColonyState, Dwarf, ForgeTask, Resources } from "./types";
+import type {
+  Activity,
+  ColonyState,
+  Dwarf,
+  ForgeTask,
+  Resources,
+} from "./types";
 
 export const SAVE_KEY = "dwarfhold-save";
 export const SAVE_VERSION = 1;
@@ -18,6 +24,7 @@ export type LoadResult =
 const RESOURCE_KEYS = ["wood", "stone", "food", "tools", "weapons"] as const;
 const JOBS = ["woodcutting", "mining", "farming"];
 const STATUSES = ["idle", "working", "expedition", "crafting"];
+const SPECIES = ["dwarf", "kobold"];
 const MAX_ACTIVITIES = 6;
 
 // ---- small runtime checks ----
@@ -35,7 +42,10 @@ function isCount(value: unknown): value is number {
 }
 
 /** Parses every item; the whole list is invalid if one item is. */
-function parseList<T>(value: unknown, parse: (item: unknown) => T | null): T[] | null {
+function parseList<T>(
+  value: unknown,
+  parse: (item: unknown) => T | null,
+): T[] | null {
   if (!Array.isArray(value)) return null;
   const items = value.map(parse);
   return items.every((item) => item !== null) ? (items as T[]) : null;
@@ -44,7 +54,8 @@ function parseList<T>(value: unknown, parse: (item: unknown) => T | null): T[] |
 // ---- parts of the save ----
 
 function parseResources(value: unknown): Resources | null {
-  if (!isObject(value) || !RESOURCE_KEYS.every((key) => isCount(value[key]))) return null;
+  if (!isObject(value) || !RESOURCE_KEYS.every((key) => isCount(value[key])))
+    return null;
   return {
     wood: value.wood as number,
     stone: value.stone as number,
@@ -56,13 +67,27 @@ function parseResources(value: unknown): Resources | null {
 
 function parseDwarf(value: unknown): Dwarf | null {
   if (!isObject(value)) return null;
-  const { id, name, title, icon, assignment, status, specialty, hungry, hasTool } = value;
+  const {
+    id,
+    name,
+    title,
+    icon,
+    assignment,
+    status,
+    specialty,
+    hungry,
+    hasTool,
+    species = "dwarf",
+  } = value;
 
-  if (!isString(id) || !isString(name) || !isString(title) || !isString(icon)) return null;
+  if (!isString(id) || !isString(name) || !isString(title) || !isString(icon))
+    return null;
   if (assignment !== null && !JOBS.includes(assignment as string)) return null;
   if (!STATUSES.includes(status as string)) return null;
-  if (specialty !== undefined && !JOBS.includes(specialty as string)) return null;
+  if (specialty !== undefined && !JOBS.includes(specialty as string))
+    return null;
   if (typeof hungry !== "boolean" || typeof hasTool !== "boolean") return null;
+  if (!SPECIES.includes(species as string)) return null;
   // Working means having a job; idle means having none.
   if (status === "working" && assignment === null) return null;
   if (status === "idle" && assignment !== null) return null;
@@ -77,6 +102,7 @@ function parseDwarf(value: unknown): Dwarf | null {
     specialty: specialty as Dwarf["specialty"],
     hungry,
     hasTool,
+    species: species as Dwarf["species"],
   };
 }
 
@@ -84,19 +110,26 @@ function parseActivity(value: unknown): Activity | null {
   if (!isObject(value)) return null;
   const { id, day, message, tone } = value;
 
-  if (!isString(id) || !Number.isInteger(day) || !isString(message)) return null;
+  if (!isString(id) || !Number.isInteger(day) || !isString(message))
+    return null;
   if (tone !== undefined && tone !== "good" && tone !== "warning") return null;
 
   return { id, day: day as number, message, tone: tone as Activity["tone"] };
 }
 
 function parseColony(value: unknown): ColonyState | null {
-  if (!isObject(value) || !Number.isInteger(value.day) || (value.day as number) < 1) return null;
+  if (
+    !isObject(value) ||
+    !Number.isInteger(value.day) ||
+    (value.day as number) < 1
+  )
+    return null;
 
   const resources = parseResources(value.resources);
   const dwarves = parseList(value.dwarves, parseDwarf);
   if (!resources || !dwarves || dwarves.length === 0) return null;
-  if (new Set(dwarves.map((dwarf) => dwarf.id)).size !== dwarves.length) return null;
+  if (new Set(dwarves.map((dwarf) => dwarf.id)).size !== dwarves.length)
+    return null;
 
   let forgeTask: ForgeTask | null = null;
   if (value.forgeTask !== null) {
@@ -117,7 +150,9 @@ function parseColony(value: unknown): ColonyState | null {
   }
 
   // A dwarf is crafting exactly when they are the forge task's crafter.
-  const crafters = dwarves.filter((dwarf) => dwarf.status === "crafting").map((dwarf) => dwarf.id);
+  const crafters = dwarves
+    .filter((dwarf) => dwarf.status === "crafting")
+    .map((dwarf) => dwarf.id);
   const expected = forgeTask ? [forgeTask.crafterId] : [];
   if (crafters.join() !== expected.join()) return null;
 

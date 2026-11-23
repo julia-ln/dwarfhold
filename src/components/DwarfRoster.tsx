@@ -1,4 +1,11 @@
-import { canEquipTool, canReturnTool, isFree, jobLabel } from "../simulation";
+import {
+  canEquipTool,
+  canReturnTool,
+  isFree,
+  jobLabel,
+  jobRate,
+  speciesTraits,
+} from "../simulation";
 import type { Dwarf, JobType } from "../types";
 
 const jobs: Exclude<JobType, null>[] = ["woodcutting", "mining", "farming"];
@@ -47,7 +54,10 @@ export function DwarfRoster({
             : "Generalist";
 
           return (
-            <article className={isAway ? "dwarf away" : "dwarf"} key={dwarf.id}>
+            <article
+              className={`dwarf species-${dwarf.species}${isAway ? " away" : ""}`}
+              key={dwarf.id}
+            >
               <div className="portrait">
                 {dwarf.icon}
                 <i className={dwarf.status} />
@@ -56,7 +66,8 @@ export function DwarfRoster({
               <div className="dwarf-details">
                 <h3>{dwarf.name}</h3>
                 <p>
-                  {dwarf.title} · {specialty}
+                  {speciesTraits[dwarf.species].label} · {dwarf.title} ·{" "}
+                  {specialty}
                 </p>
 
                 <select
@@ -70,7 +81,7 @@ export function DwarfRoster({
                   <option value="">Unassigned</option>
                   {jobs.map((job) => (
                     <option value={job} key={job}>
-                      {jobLabel(job)}
+                      {jobLabel(job)} (+{jobRate(dwarf, job)})
                     </option>
                   ))}
                 </select>

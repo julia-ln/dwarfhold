@@ -1,7 +1,12 @@
 import { Fragment, useState } from "react";
 import { Chronicle } from "../components/Chronicle";
 import { resourceDetails } from "../components/ResourceBar";
-import { canStartCraft, recipes, type RecipeId } from "../simulation";
+import {
+  canStartCraft,
+  craftDays,
+  recipes,
+  type RecipeId,
+} from "../simulation";
 import { useColony } from "../state/ColonyContext";
 import type { Dwarf, ResourceKey } from "../types";
 
@@ -27,6 +32,10 @@ export function ForgePage() {
     : undefined;
 
   const crafter = colony.dwarves.find((dwarf) => dwarf.id === crafterId);
+  const shownCrafter = taskCrafter ?? crafter;
+  const fastSmiths = colony.dwarves.filter(
+    (dwarf) => craftDays(dwarf, "weapon") < recipes.weapon.days,
+  );
   const message = task
     ? `🔥 ${taskCrafter?.name} is forging a ${recipes[task.recipeId].name}, ready on day ${task.readyOnDay}.`
     : crafter
@@ -40,9 +49,18 @@ export function ForgePage() {
           <small>EMBER FORGE</small>
           <h2>Craft equipment</h2>
           <p>
-            Tools add 1 to a working dwarf's output. Weapons are stored for the
+            Tools add 1 to a working residents' output. Weapons are stored for the
             hold's defense. Materials are paid when forging starts.
           </p>
+          {fastSmiths.map((dwarf) => {
+            const days = craftDays(dwarf, "weapon");
+            return (
+              <p key={dwarf.id} className="forge-bonus">
+                ⚡ {dwarf.name} forges weapons in {days}{" "}
+                {days === 1 ? "day" : "days"}.
+              </p>
+            );
+          })}
         </div>
 
         <label className="crafter">
@@ -66,6 +84,9 @@ export function ForgePage() {
         <div className="recipes">
           {recipeIds.map((id) => {
             const recipe = recipes[id];
+            const days = shownCrafter
+              ? craftDays(shownCrafter, id)
+              : recipe.days;
 
             return (
               <div className="recipe" key={id}>
@@ -82,7 +103,7 @@ export function ForgePage() {
                 <i>→</i>
                 <span>1 {resourceDetails[recipe.output][0]}</span>
                 <small className="recipe-days">
-                  {recipe.days} {recipe.days === 1 ? "day" : "days"}
+                  {days} {days === 1 ? "day" : "days"}
                 </small>
                 <button
                   disabled={!canStartCraft(colony, id, crafterId)}

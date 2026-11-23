@@ -6,9 +6,11 @@ import {
   departExpedition,
   endExpedition,
   equipTool,
+  jobRate,
   resumeAfterReload,
   returnTool,
   startCraft,
+  welcomeNewcomer,
 } from "./simulation";
 import { parseSave } from "./storage";
 import type { ColonyState, Dwarf, Resources } from "./types";
@@ -22,6 +24,7 @@ const dwarf = (overrides: Partial<Dwarf> = {}): Dwarf => ({
   status: "working",
   hungry: false,
   hasTool: false,
+  species: "dwarf",
   ...overrides,
 });
 
@@ -284,5 +287,64 @@ describe("colony simulation", () => {
     const { colony: resumed, notes } = resumeAfterReload(state);
     expect(resumed).toBe(state);
     expect(notes[0].message).toContain("ready on day 3");
+  });
+
+  it("lets the kobold join once, and only after the Old Mine", () => {
+    const start = colony(5, [dwarf()]);
+    expect(welcomeNewcomer(start, "crystal-cave")).toBe(start);
+
+    const joined = welcomeNewcomer(start, "old-mine");
+    expect(joined.dwarves.map((resident) => resident.species)).toEqual([
+      "dwarf",
+      "kobold",
+    ]);
+    expect(welcomeNewcomer(joined, "old-mine")).toBe(joined);
+  });
+
+  it("uses the kobold's own production rates", () => {
+    const kobold = dwarf({ species: "kobold", assignment: "mining" });
+    expect(dailyOutput(kobold)).toEqual({ stone: 4 });
+    expect(dailyOutput({ ...kobold, hasTool: true })).toEqual({ stone: 5 });
+    expect(dailyOutput({ ...kobold, hungry: true })).toEqual({ stone: 3 });
+  });
+
+  it("lets a kobold forge a weapon in 1 day instead of 2", () => {
+    const materials = { wood: 2, stone: 3 };
+    const byKobold = startCraft(
+      colony(5, [dwarf({ species: "kobold" })], materials),
+      "weapon",
+      "d1",
+    );
+    expect(byKobold.forgeTask?.readyOnDay).toBe(2);
+
+    const byDwarf = startCraft(colony(5, [dwarf()], materials), "weapon", "d1");
+    expect(byDwarf.forgeTask?.readyOnDay).toBe(3);
+  });
+
+  it("loads old saves without species as dwarves and rejects unknown species", () => {
+    const save = validSave();
+    const oldDwarf = { ...save.colony.dwarves[0] };
+    delete oldDwarf.species;
+    const oldSave = {
+      ...save,
+      colony: { ...save.colony, dwarves: [oldDwarf] },
+    };
+    expect(parseSave(oldSave)?.colony.dwarves[0].species).toBe("dwarf");
+
+    const dragon = {
+      ...save,
+      colony: {
+        ...save.colony,
+        dwarves: [{ ...save.colony.dwarves[0], species: "dragon" }],
+      },
+    };
+    expect(parseSave(dragon)).toBeNull();
+  });
+
+    it("shows the real job rate including species, tool and hunger", () => {
+    const kobold = dwarf({ species: "kobold", assignment: null, status: "idle" });
+    expect(jobRate(kobold, "mining")).toBe(4);
+    expect(jobRate({ ...kobold, hasTool: true }, "mining")).toBe(5);
+    expect(jobRate({ ...kobold, hasTool: true, hungry: true }, "mining")).toBe(4);
   });
 });

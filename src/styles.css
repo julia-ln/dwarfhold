@@ -27,3 +27,8 @@
 .forge p.forge-status.warning { color: #d47459; }
 .reset-button { background: transparent; border: 1px solid #554634; color: #8f775a; font: 600 10px "Barlow Condensed"; letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px; cursor: pointer; }
 .reset-button:hover { color: #d47459; border-color: #d47459; }
+
+.species-kobold .portrait { border-color: #7fb77e; background: linear-gradient(145deg, #2f3d24, #1b2415); }
+.expedition > p.rumour { color: #d9a34f; font-style: italic; }
+
+.forge p.forge-bonus { margin-top: 6px; color: #7fb77e; font-weight: 600; }

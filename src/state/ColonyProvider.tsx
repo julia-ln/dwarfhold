@@ -16,6 +16,10 @@ import {
   startCraft,
   type RecipeId,
   resumeAfterReload,
+  craftDays,
+  hasNewcomerJoined,
+  NEWCOMER_DESTINATION,
+  welcomeNewcomer,
 } from "../simulation";
 import type { Activity, ColonyState, JobType } from "../types";
 import { ColonyContext, type ColonyContextValue } from "./ColonyContext";
@@ -41,6 +45,7 @@ const initialState: ColonyState = {
       specialty: "mining",
       hungry: false,
       hasTool: false,
+      species: "dwarf",
     },
     {
       id: "dwarf-2",
@@ -52,6 +57,7 @@ const initialState: ColonyState = {
       specialty: "woodcutting",
       hungry: false,
       hasTool: false,
+      species: "dwarf",
     },
     {
       id: "dwarf-3",
@@ -62,6 +68,7 @@ const initialState: ColonyState = {
       status: "idle",
       hungry: false,
       hasTool: false,
+      species: "dwarf",
     },
   ],
   forgeTask: null,
@@ -189,7 +196,7 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
     const recipe = recipes[recipeId];
     setColony((current) => startCraft(current, recipeId, crafterId));
     addActivity(
-      `${crafter.name} starts forging a ${recipe.name} (ready on day ${colony.day + recipe.days}).`,
+      `${crafter.name} starts forging a ${recipe.name} (ready on day ${colony.day + craftDays(crafter, recipeId)}).`,
     );
   }
 
@@ -204,10 +211,22 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
 
     try {
       const result = await beginExpedition(dwarfId, destination);
+      const newcomerArrives =
+        destination === NEWCOMER_DESTINATION && !hasNewcomerJoined(colony);
+
       setColony((current) =>
-        endExpedition(current, dwarfId, result.rewards ?? {}),
+        welcomeNewcomer(
+          endExpedition(current, dwarfId, result.rewards ?? {}),
+          destination,
+        ),
       );
       addActivity(result.message, "good");
+      if (newcomerArrives) {
+        addActivity(
+          "A kobold named Skritch follows the scout out of the deep tunnels and joins Stonehome.",
+          "good",
+        );
+      }
     } catch (error) {
       setColony((current) => endExpedition(current, dwarfId));
       const reason =

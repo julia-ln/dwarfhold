@@ -66,6 +66,20 @@ The starter destinations:
 
 The short delay is deliberate, so that expedition behavior provides a realistic place to reason about promises, loading state, failures, and consistency between worker and resource state.
 
+### A new resident
+
+Rumours speak of something living in the deep tunnels of **The Old Mine**. After the **first successful** expedition there, **Skritch**, a Tunnel Kobold, follows the scout home and joins Stonehome. He joins only once; failed, timed-out, or reload-interrupted expeditions never bring him.
+
+Kobolds differ from dwarves:
+
+| Job | Dwarf | Kobold |
+|---|---:|---:|
+| Woodcutting | 3 wood | 2 wood |
+| Deep Mining | 2 stone | **4 stone** |
+| Mushroom Farm | 4 food | 2 food |
+
+Kobolds also forge **weapons in 1 day** instead of 2 (tools take 1 day for everyone). In every other respect Skritch follows the same rules as the dwarves: he eats one food per day (and is fed last), can go hungry, can carry a tool (+1), can travel and craft when free and fed, and is saved with the colony. The job dropdowns show each resident's own rate, and the forge shows the duration for the selected crafter.
+
 ### Save and restore
 
 The colony (day, resources, dwarves, equipped tools, the forge task) and the chronicle are saved in the browser's local storage after every change and restored after a refresh. The game always resumes running; a pause is not saved.

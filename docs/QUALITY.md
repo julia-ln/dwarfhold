@@ -86,3 +86,8 @@ Dwarfhold is a small single-player browser game, built and maintained by a two-p
 | D5 | Save format has a version number; a different version counts as incompatible | Q1 | `SAVE_VERSION` |
 | D5 | Interrupted expedition returns empty-handed; interrupted forge task continues | Q1, Q3 | `resumeAfterReload`, tests "…after a reload" |
 | D5 | One storage module; load once (lazy initializer), save in an effect; pause is not saved | Q2 | `storage.ts`, `ColonyProvider.tsx` |
+| D6 | Species traits (production, forge days) in one table; the newcomer is a normal resident, so all existing rules apply without special cases | Q2 | `speciesTraits`, `dailyOutput`, `craftDays` |
+| D6 | "Has joined" is derived from the roster, not stored; `welcomeNewcomer` is idempotent and only runs after success | Q1 | test "lets the kobold join once…" |
+| D6 | Old saves stay compatible: a missing `species` means "dwarf"; unknown species are rejected | Q1 | `parseDwarf`, test "loads old saves…" |
+| D6 | Job dropdowns show each resident's own rate; forge shows the crafter's duration; a rumour hint names the destination | Q3 | `DwarfRoster.tsx`, `ForgePage.tsx`, `ColonyPage.tsx` |
+| D6 | Job dropdowns show the real rate (species, tool, hunger) via `jobRate`, which reuses `dailyOutput` | Q1, Q3 | `jobRate`, test "shows the real job rate…" |
