@@ -3,6 +3,8 @@ import {
   advanceDay,
   canTravel,
   dailyOutput,
+  departExpedition,
+  endExpedition,
   equipTool,
   returnTool,
   startCraft,
@@ -178,5 +180,48 @@ describe("colony simulation", () => {
     expect(next.dwarves[0].hungry).toBe(true);
     expect(next.resources.tools).toBe(1);
     expect(next.forgeTask).toBeNull();
+  });
+
+  it("sends only a free, fed dwarf on an expedition", () => {
+    const sent = departExpedition(colony(5, [dwarf()]), "d1");
+    expect(sent.dwarves[0].status).toBe("expedition");
+
+    const hungry = colony(5, [dwarf({ hungry: true })]);
+    expect(departExpedition(hungry, "d1")).toBe(hungry);
+
+    const crafting = colony(5, [dwarf({ status: "crafting" })]);
+    expect(departExpedition(crafting, "d1")).toBe(crafting);
+
+    const away = colony(5, [dwarf({ status: "expedition" })]);
+    expect(departExpedition(away, "d1")).toBe(away);
+  });
+
+  it("brings the dwarf home with the rewards and their tool", () => {
+    const away = colony(5, [dwarf({ status: "expedition", hasTool: true })]);
+    const home = endExpedition(away, "d1", { stone: 8, tools: 1 });
+    expect(home.resources).toMatchObject({ stone: 8, tools: 1 });
+    expect(home.dwarves[0]).toMatchObject({ status: "working", hasTool: true });
+  });
+
+  it("applies the rewards exactly once", () => {
+    const away = colony(5, [dwarf({ status: "expedition" })]);
+    const home = endExpedition(away, "d1", { stone: 8 });
+    expect(endExpedition(home, "d1", { stone: 8 })).toBe(home);
+    expect(home.resources.stone).toBe(8);
+  });
+
+  it("brings the dwarf home without rewards after a failure", () => {
+    const away = colony(5, [dwarf({ status: "expedition", assignment: null })]);
+    const home = endExpedition(away, "d1");
+    expect(home.resources).toEqual(away.resources);
+    expect(home.dwarves[0].status).toBe("idle");
+  });
+
+  it("ignores unknown or negative rewards", () => {
+    const away = colony(5, [dwarf({ status: "expedition" })]);
+    const rewards = { stone: -3, gold: 5 } as unknown as Partial<Resources>;
+    expect(endExpedition(away, "d1", rewards).resources).toEqual(
+      away.resources,
+    );
   });
 });

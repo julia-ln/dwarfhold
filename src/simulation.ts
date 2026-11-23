@@ -1,4 +1,11 @@
-import type { ColonyState, Dwarf, JobType, RecipeId, ResourceKey, Resources } from "./types";
+import type {
+  ColonyState,
+  Dwarf,
+  JobType,
+  RecipeId,
+  ResourceKey,
+  Resources,
+} from "./types";
 
 export type { RecipeId } from "./types";
 
@@ -18,8 +25,13 @@ export function dailyOutput(dwarf: Dwarf): Partial<Resources> {
   const bonus = dwarf.hasTool ? TOOL_BONUS : 0;
   const penalty = dwarf.hungry ? HUNGER_PENALTY : 0;
   const output: Partial<Resources> = {};
-  for (const [resource, amount] of Object.entries(production[dwarf.assignment])) {
-    output[resource as keyof Resources] = Math.max(0, (amount ?? 0) + bonus - penalty);
+  for (const [resource, amount] of Object.entries(
+    production[dwarf.assignment],
+  )) {
+    output[resource as keyof Resources] = Math.max(
+      0,
+      (amount ?? 0) + bonus - penalty,
+    );
   }
   return output;
 }
@@ -27,11 +39,11 @@ export function dailyOutput(dwarf: Dwarf): Partial<Resources> {
 /** Total production of the whole company for one day. */
 export function dailyProduction(dwarves: Dwarf[]): Resources {
   const total: Resources = { wood: 0, stone: 0, food: 0, tools: 0, weapons: 0 };
-    for (const dwarf of dwarves) {
-      for (const [resource, amount] of Object.entries(dailyOutput(dwarf))) {
-        total[resource as keyof Resources] += amount ?? 0;
-      }
+  for (const dwarf of dwarves) {
+    for (const [resource, amount] of Object.entries(dailyOutput(dwarf))) {
+      total[resource as keyof Resources] += amount ?? 0;
     }
+  }
   return total;
 }
 
@@ -59,17 +71,29 @@ export interface Recipe {
 
 export const recipes: Record<RecipeId, Recipe> = {
   tool: { name: "tool", cost: { wood: 3, stone: 2 }, output: "tools", days: 1 },
-  weapon: { name: "weapon", cost: { wood: 2, stone: 3 }, output: "weapons", days: 2 },
+  weapon: {
+    name: "weapon",
+    cost: { wood: 2, stone: 3 },
+    output: "weapons",
+    days: 2,
+  },
 };
 
-export function canAfford(resources: Resources, cost: Partial<Resources>): boolean {
+export function canAfford(
+  resources: Resources,
+  cost: Partial<Resources>,
+): boolean {
   return Object.entries(cost).every(
     ([resource, amount]) => resources[resource as ResourceKey] >= (amount ?? 0),
   );
 }
 
 /** The forge is free, the crafter is eligible, and the materials are in stock. */
-export function canStartCraft(state: ColonyState, recipeId: RecipeId, crafterId: string): boolean {
+export function canStartCraft(
+  state: ColonyState,
+  recipeId: RecipeId,
+  crafterId: string,
+): boolean {
   const crafter = state.dwarves.find((dwarf) => dwarf.id === crafterId);
   return (
     state.forgeTask === null &&
@@ -80,7 +104,11 @@ export function canStartCraft(state: ColonyState, recipeId: RecipeId, crafterId:
 }
 
 /** Pays the materials and occupies the crafter. Invalid attempts leave the state unchanged. */
-export function startCraft(state: ColonyState, recipeId: RecipeId, crafterId: string): ColonyState {
+export function startCraft(
+  state: ColonyState,
+  recipeId: RecipeId,
+  crafterId: string,
+): ColonyState {
   if (!canStartCraft(state, recipeId, crafterId)) return state;
 
   const recipe = recipes[recipeId];
@@ -92,8 +120,9 @@ export function startCraft(state: ColonyState, recipeId: RecipeId, crafterId: st
   return {
     ...state,
     resources,
-    dwarves: state.dwarves.map((dwarf): Dwarf =>
-      dwarf.id === crafterId ? { ...dwarf, status: "crafting" } : dwarf,
+    dwarves: state.dwarves.map(
+      (dwarf): Dwarf =>
+        dwarf.id === crafterId ? { ...dwarf, status: "crafting" } : dwarf,
     ),
     forgeTask: { recipeId, crafterId, readyOnDay: state.day + recipe.days },
   };
@@ -110,10 +139,11 @@ function finishForgeTask(state: ColonyState): ColonyState {
   return {
     ...state,
     resources,
-    dwarves: state.dwarves.map((dwarf): Dwarf =>
-      dwarf.id === task.crafterId
-        ? { ...dwarf, status: dwarf.assignment ? "working" : "idle" }
-        : dwarf,
+    dwarves: state.dwarves.map(
+      (dwarf): Dwarf =>
+        dwarf.id === task.crafterId
+          ? { ...dwarf, status: dwarf.assignment ? "working" : "idle" }
+          : dwarf,
     ),
     forgeTask: null,
   };
@@ -153,6 +183,54 @@ export function returnTool(state: ColonyState, dwarfId: string): ColonyState {
     resources: { ...state.resources, tools: state.resources.tools + 1 },
     dwarves: state.dwarves.map((item) =>
       item.id === dwarfId ? { ...item, hasTool: false } : item,
+    ),
+  };
+}
+
+/** Sends a dwarf on an expedition. Ineligible dwarves leave the state unchanged. */
+export function departExpedition(
+  state: ColonyState,
+  dwarfId: string,
+): ColonyState {
+  const dwarf = state.dwarves.find((item) => item.id === dwarfId);
+  if (!dwarf || !canTravel(dwarf)) return state;
+
+  return {
+    ...state,
+    dwarves: state.dwarves.map(
+      (item): Dwarf =>
+        item.id === dwarfId ? { ...item, status: "expedition" } : item,
+    ),
+  };
+}
+
+/**
+ * Brings a travelling dwarf home and adds the rewards (none after a failure).
+ * Acts only while the dwarf is away, so rewards are applied exactly once.
+ */
+export function endExpedition(
+  state: ColonyState,
+  dwarfId: string,
+  rewards: Partial<Resources> = {},
+): ColonyState {
+  const dwarf = state.dwarves.find((item) => item.id === dwarfId);
+  if (!dwarf || dwarf.status !== "expedition") return state;
+
+  const resources = { ...state.resources };
+  for (const [resource, amount] of Object.entries(rewards)) {
+    if (resource in resources && Number.isInteger(amount) && amount > 0) {
+      resources[resource as ResourceKey] += amount;
+    }
+  }
+
+  return {
+    ...state,
+    resources,
+    dwarves: state.dwarves.map(
+      (item): Dwarf =>
+        item.id === dwarfId
+          ? { ...item, status: item.assignment ? "working" : "idle" }
+          : item,
     ),
   };
 }

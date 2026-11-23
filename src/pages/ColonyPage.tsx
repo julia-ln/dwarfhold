@@ -158,8 +158,9 @@ export function ColonyPage() {
             <p className="travel-warning">{scout.name} is busy at the forge.</p>
           )}
           <p>
-            A result returns in one request. The selected dwarf is unavailable
-            while travelling.
+            The scout is away until the result arrives. An equipped tool travels
+            with them. A failed or lost expedition returns the scout without
+            rewards.
           </p>
         </section>
 
