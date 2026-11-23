@@ -1,13 +1,25 @@
 import { useState } from "react";
 import { Chronicle } from "../components/Chronicle";
 import { DwarfRoster } from "../components/DwarfRoster";
-import { canTravel, dailyProduction, jobLabel, production } from "../simulation";
+import {
+  canTravel,
+  dailyProduction,
+  jobLabel,
+  production,
+} from "../simulation";
 import { useColony } from "../state/ColonyContext";
 import type { ResourceKey } from "../types";
 
 export function ColonyPage() {
-  const { colony, activities, expeditionPending, assignDwarf, equip, unequip, sendExpedition } =
-    useColony();
+  const {
+    colony,
+    activities,
+    expeditionPending,
+    assignDwarf,
+    equip,
+    unequip,
+    sendExpedition,
+  } = useColony();
   const [destination, setDestination] = useState("crystal-cave");
   const [expeditionDwarf, setExpeditionDwarf] = useState("dwarf-3");
 
@@ -58,7 +70,10 @@ export function ColonyPage() {
                   }{" "}
                   working
                 </p>
-                <strong>+{produced[Object.keys(production[job])[0] as ResourceKey]} / day</strong>
+                <strong>
+                  +{produced[Object.keys(production[job])[0] as ResourceKey]} /
+                  day
+                </strong>
               </article>
             ))}
           </div>
@@ -73,7 +88,8 @@ export function ColonyPage() {
           <p className="food-rule">
             Each dwarf eats 1 food per day, travellers included. If the rations
             run out, dwarves are fed in roster order. Unfed dwarves go hungry
-            and produce 1 less until they are fed again.<br />
+            and produce 1 less until they are fed again.
+            <br />
             An equipped tool adds 1 to its dwarf's daily output.
           </p>
           {hungryCount > 0 ? (
@@ -137,6 +153,9 @@ export function ColonyPage() {
             <p className="travel-warning">
               {scout.name} is too hungry to travel. Feed them first.
             </p>
+          )}
+          {scout?.status === "crafting" && (
+            <p className="travel-warning">{scout.name} is busy at the forge.</p>
           )}
           <p>
             A result returns in one request. The selected dwarf is unavailable

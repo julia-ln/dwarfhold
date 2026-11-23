@@ -11,7 +11,7 @@ export interface ColonyContextValue {
   assignDwarf: (id: string, assignment: JobType) => void;
   equip: (id: string) => void;
   unequip: (id: string) => void;
-  forge: (recipeId: RecipeId) => void;
+  forge: (recipeId: RecipeId, crafterId: string) => void;
   sendExpedition: (dwarfId: string, destination: string) => Promise<void>;
 }
 

@@ -45,7 +45,7 @@ export function Layout() {
       <Outlet />
 
       <footer>
-        <span>🔥 Forge: burning</span>
+        <span>{colony.forgeTask ? "🔥 Forge: burning" : "Forge: cold"}</span>
         <span>Next deep day in ~8 seconds</span>
         <span>{paused ? "The hold is resting" : "⚙ Simulation active"}</span>
       </footer>

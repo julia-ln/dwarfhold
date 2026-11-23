@@ -19,3 +19,9 @@
 .forge { flex-direction: column; gap: 12px; }
 .recipe { padding-top: 10px; border-top: 1px solid #3b3023; }
 .recipe button { min-width: 110px; margin-left: auto; }
+.crafter { display: block; font: 600 10px "Barlow Condensed"; letter-spacing: .1em; color: #9e8566; }
+.crafter select { display: block; width: 220px; margin-top: 5px; background: #100e0b; color: #d8c8ae; border: 1px solid #4d3f30; padding: 5px; }
+.recipe-days { letter-spacing: normal; color: #927b60; }
+.portrait i.crafting { background: #d9a34f; }
+.forge p.forge-status { min-height: 16px; font: 600 12px "Barlow Condensed"; color: #d9a34f; }
+.forge p.forge-status.warning { color: #d47459; }

@@ -71,4 +71,9 @@ Dwarfhold is a small single-player browser game, built and maintained by a two-p
 | D1 | The ledger shows real totals from `dailyProduction`; shortage messages are derived, not stored | Q1, Q3 | `ColonyPage.tsx` |
 | D2 | Tools in stores (`resources.tools`) + `hasTool` per dwarf; the total is derived, never stored | Q1 | `equipTool`/`returnTool`, test "moves one tool…" |
 | D2 | One tool type, +1 on all local jobs; additive with hunger | Q2, Q3 | `dailyOutput`, test "cancel out" |
-| D2 | Weapon: 2 wood + 3 stone; one recipe table with one `canAfford` check (also fixes negative stone) | Q1, Q2 | `recipes`, `craft`, test "does not forge…" |
+| D2 | Weapon: 2 wood + 3 stone; one recipe table with one `canAfford` check (also fixes negative stone) | Q1, Q2 | `recipes`, `canAfford`, test "refuses to start forging…" |
+| D3 | Crafting takes game days (tool 1, weapon 2); pauses with the game clock | Q1, Q3 | `recipes.days`, `finishForgeTask` |
+| D3 | One forge task at a time (`forgeTask`); materials paid at the start | Q1, Q2 | `canStartCraft`, `startCraft`, test "refuses…" |
+| D3 | Crafter status `crafting`: no production, still eats, cannot travel or be reassigned | Q1 | `isFree`, test "finishes the item…" |
+| D3 | No chronicle entry on completion: `advanceDay` must stay pure; completion is visible on the forge panel and resource tile | Q2 | `ForgePage.tsx` |
+| D3 | Hunger blocks starting a task but does not interrupt a running one (crafting or travel) | Q2, Q3 | `canCraft`, `canTravel`, test "keeps forging when the crafter goes hungry" |
