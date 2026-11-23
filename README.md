@@ -54,7 +54,7 @@ Open the **Forge** page, choose a crafter, and press **Forge tool** or **Forge w
 
 ### Expeditions
 
-The expedition panel lets you select a dwarf and one destination. Sending an expedition starts an asynchronous request to the local API. The selected dwarf is shown as away while the request is in progress. A successful result returns the dwarf and adds the destination's rewards to the inventory and an unsuccessful result is reported in the chronicle.
+The expedition panel sends one eligible dwarf to a destination. A dwarf is eligible when they are present, not busy at the forge, and not hungry. Only one expedition can be underway at a time. While the request is in progress, the dwarf is away: they produce nothing (but still eat), cannot be reassigned or start forging, and keep any equipped tool, which travels with them. Every outcome brings the dwarf back: a success adds the destination's rewards exactly once, while a failure, an unreachable server, or no answer within 10 seconds adds nothing and is reported in the chronicle.
 
 The starter destinations:
 

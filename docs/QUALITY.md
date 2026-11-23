@@ -77,3 +77,8 @@ Dwarfhold is a small single-player browser game, built and maintained by a two-p
 | D3 | Crafter status `crafting`: no production, still eats, cannot travel or be reassigned | Q1 | `isFree`, test "finishes the item…" |
 | D3 | No chronicle entry on completion: `advanceDay` must stay pure; completion is visible on the forge panel and resource tile | Q2 | `ForgePage.tsx` |
 | D3 | Hunger blocks starting a task but does not interrupt a running one (crafting or travel) | Q2, Q3 | `canCraft`, `canTravel`, test "keeps forging when the crafter goes hungry" |
+| D4 | Rewards exactly once: `endExpedition` acts only while the dwarf is away | Q1 | `endExpedition`, test "applies the rewards exactly once" |
+| D4 | Every outcome (success, error, timeout after 10 s) brings the dwarf back | Q1, Q3 | `sendExpedition` (`finally`), `api.ts`, test "…after a failure" |
+| D4 | Synchronous in-flight guard (`useRef`) against repeated clicks; one expedition at a time | Q1, Q2 | `ColonyProvider.tsx` |
+| D4 | An equipped tool travels with the dwarf | Q2, Q3 | test "…with the rewards and their tool" |
+| D4 | Rewards are validated: only known resources with positive whole numbers | Q1 | test "ignores unknown or negative rewards" |
