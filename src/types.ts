@@ -10,7 +10,8 @@ export interface Dwarf {
      icon: string; 
      assignment: JobType; 
      status: DwarfStatus; 
-     specialty?: Exclude<JobType, null> 
+     specialty?: Exclude<JobType, null>;
+     hungry: boolean
 }
 
 export interface ColonyState { 

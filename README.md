@@ -21,6 +21,14 @@ At the end of each day, the colony consumes one food for every dwarf. With the i
 
 Use the assignment dropdown beside a dwarf to change their work. A changed assignment affects subsequent simulation days.
 
+### Food shortage
+
+Production happens first, then meals. Only dwarves who are present and working produce; a dwarf on an expedition produces nothing until they return. Every dwarf eats one food per day, travellers included (they carry provisions).
+
+If the stores run out, dwarves are fed in roster order. A dwarf who could not be fed becomes **hungry** and produces one unit less per day (never below zero) until they are fed again. Food never drops below zero.
+
+A hungry dwarf is too weak to travel and cannot be sent on an expedition until they are fed again.
+
 ### Resources
 
 The shared inventory contains:

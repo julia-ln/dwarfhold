@@ -1,12 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { beginExpedition } from "../api";
-import { advanceDay, jobLabel } from "../simulation";
-import type {
-  Activity,
-  ColonyState,
-  JobType,
-  ResourceKey,
-} from "../types";
+import { advanceDay, canTravel, jobLabel } from "../simulation";
+import type { Activity, ColonyState, JobType, ResourceKey } from "../types";
 import { ColonyContext, type ColonyContextValue } from "./ColonyContext";
 
 const initialState: ColonyState = {
@@ -26,6 +21,7 @@ const initialState: ColonyState = {
       assignment: "mining",
       status: "working",
       specialty: "mining",
+      hungry: false,
     },
     {
       id: "dwarf-2",
@@ -35,6 +31,7 @@ const initialState: ColonyState = {
       assignment: "woodcutting",
       status: "working",
       specialty: "woodcutting",
+      hungry: false,
     },
     {
       id: "dwarf-3",
@@ -43,6 +40,7 @@ const initialState: ColonyState = {
       icon: "🧔🏽",
       assignment: null,
       status: "idle",
+      hungry: false,
     },
   ],
 };
@@ -71,26 +69,24 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
   }, [paused]);
 
   function assignDwarf(id: string, assignment: JobType) {
+    const dwarf = colony.dwarves.find((item) => item.id === id);
+    if (!dwarf || dwarf.status === "expedition") return;
+
     setColony((current) => ({
       ...current,
-      dwarves: current.dwarves.map((dwarf) =>
-        dwarf.id === id
-          ? {
-              ...dwarf,
-              assignment,
-              status: assignment ? "working" : "idle",
-            }
-          : dwarf,
+      dwarves: current.dwarves.map((item) =>
+        item.id === id && item.status !== "expedition"
+          ? { ...item, assignment, status: assignment ? "working" : "idle" }
+          : item,
       ),
     }));
 
-    const dwarf = colony.dwarves.find((item) => item.id === id);
     setActivities((current) =>
       [
         {
           id: crypto.randomUUID(),
           day: colony.day,
-          message: `${dwarf?.name ?? "A dwarf"} assigned to ${jobLabel(assignment)}.`,
+          message: `${dwarf.name} assigned to ${jobLabel(assignment)}.`,
         },
         ...current,
       ].slice(0, 6),
@@ -135,7 +131,7 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
 
   async function sendExpedition(dwarfId: string, destination: string) {
     const dwarf = colony.dwarves.find((item) => item.id === dwarfId);
-    if (!dwarf) return;
+    if (!dwarf || !canTravel(dwarf)) return;
 
     setExpeditionPending(true);
     setColony((current) => ({

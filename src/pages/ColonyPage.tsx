@@ -1,38 +1,22 @@
 import { useState } from "react";
 import { Chronicle } from "../components/Chronicle";
 import { DwarfRoster } from "../components/DwarfRoster";
-import { jobLabel, production } from "../simulation";
+import { canTravel, dailyProduction, jobLabel, production } from "../simulation";
 import { useColony } from "../state/ColonyContext";
 import type { ResourceKey } from "../types";
 
 export function ColonyPage() {
-  const {
-    colony,
-    activities,
-    expeditionPending,
-    assignDwarf,
-    sendExpedition,
-  } = useColony();
+  const { colony, activities, expeditionPending, assignDwarf, sendExpedition } =
+    useColony();
   const [destination, setDestination] = useState("crystal-cave");
   const [expeditionDwarf, setExpeditionDwarf] = useState("dwarf-3");
 
-  const dailyOutput = colony.dwarves.reduce<Record<ResourceKey, number>>(
-    (total, dwarf) => {
-      if (dwarf.assignment) {
-        const output = production[dwarf.assignment];
-        Object.entries(output).forEach(([resource, amount]) => {
-          total[resource as ResourceKey] += amount ?? 0;
-        });
-      }
-      return total;
-    },
-    {
-      wood: 0,
-      stone: 0,
-      food: -colony.dwarves.length,
-      tools: 0,
-    },
-  );
+  const produced = dailyProduction(colony.dwarves);
+  const netFood = produced.food - colony.dwarves.length;
+  const runsShort = colony.resources.food + netFood < 0;
+  const hungryCount = colony.dwarves.filter((dwarf) => dwarf.hungry).length;
+  const scout = colony.dwarves.find((dwarf) => dwarf.id === expeditionDwarf);
+  const scoutCanTravel = scout !== undefined && canTravel(scout);
 
   return (
     <div className="dashboard">
@@ -62,23 +46,41 @@ export function ColonyPage() {
                 <p>
                   {
                     colony.dwarves.filter(
-                      (dwarf) => dwarf.assignment === job,
+                      (dwarf) =>
+                        dwarf.assignment === job && dwarf.status === "working",
                     ).length
                   }{" "}
-                  assigned
+                  working
                 </p>
-                <strong>+{Object.values(production[job])[0]} / day</strong>
+                <strong>+{produced[Object.keys(production[job])[0] as ResourceKey]} / day</strong>
               </article>
             ))}
           </div>
 
           <div className="net-line">
             <span>NET FOOD AFTER MEALS</span>
-            <strong className={dailyOutput.food >= 0 ? "gain" : "loss"}>
-              {dailyOutput.food >= 0 ? "+" : ""}
-              {dailyOutput.food}
+            <strong className={netFood >= 0 ? "gain" : "loss"}>
+              {netFood >= 0 ? "+" : ""}
+              {netFood}
             </strong>
           </div>
+          <p className="food-rule">
+            Each dwarf eats 1 food per day, travellers included. If the rations
+            run out, dwarves are fed in roster order. Unfed dwarves go hungry
+            and produce 1 less until they are fed again.
+          </p>
+          {hungryCount > 0 ? (
+            <p className="food-rule short">
+              Rations are empty. {hungryCount}{" "}
+              {hungryCount === 1 ? "dwarf is" : "dwarves are"} hungry.
+            </p>
+          ) : (
+            runsShort && (
+              <p className="food-rule short">
+                Rations will run short at the end of today.
+              </p>
+            )
+          )}
         </section>
       </section>
 
@@ -119,11 +121,16 @@ export function ColonyPage() {
           </label>
 
           <button
-            disabled={expeditionPending}
+            disabled={expeditionPending || !scoutCanTravel}
             onClick={() => sendExpedition(expeditionDwarf, destination)}
           >
             {expeditionPending ? "Beyond the gate…" : "Send expedition"}
           </button>
+          {scout?.hungry && (
+            <p className="travel-warning">
+              {scout.name} is too hungry to travel. Feed them first.
+            </p>
+          )}
           <p>
             A result returns in one request. The selected dwarf is unavailable
             while travelling.
