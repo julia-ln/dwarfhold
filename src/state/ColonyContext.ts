@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react";
 import type { Activity, ColonyState, JobType } from "../types";
+import type { RecipeId } from "../simulation";
 
 export interface ColonyContextValue {
   colony: ColonyState;
@@ -8,7 +9,9 @@ export interface ColonyContextValue {
   expeditionPending: boolean;
   togglePaused: () => void;
   assignDwarf: (id: string, assignment: JobType) => void;
-  craftTool: () => void;
+  equip: (id: string) => void;
+  unequip: (id: string) => void;
+  forge: (recipeId: RecipeId) => void;
   sendExpedition: (dwarfId: string, destination: string) => Promise<void>;
 }
 

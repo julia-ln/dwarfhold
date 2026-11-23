@@ -6,7 +6,7 @@ import { useColony } from "../state/ColonyContext";
 import type { ResourceKey } from "../types";
 
 export function ColonyPage() {
-  const { colony, activities, expeditionPending, assignDwarf, sendExpedition } =
+  const { colony, activities, expeditionPending, assignDwarf, equip, unequip, sendExpedition } =
     useColony();
   const [destination, setDestination] = useState("crystal-cave");
   const [expeditionDwarf, setExpeditionDwarf] = useState("dwarf-3");
@@ -20,7 +20,13 @@ export function ColonyPage() {
 
   return (
     <div className="dashboard">
-      <DwarfRoster dwarves={colony.dwarves} onAssign={assignDwarf} />
+      <DwarfRoster
+        dwarves={colony.dwarves}
+        toolsInStore={colony.resources.tools}
+        onAssign={assignDwarf}
+        onEquip={equip}
+        onUnequip={unequip}
+      />
 
       <section className="center-stack">
         <section className="panel production">
@@ -67,7 +73,8 @@ export function ColonyPage() {
           <p className="food-rule">
             Each dwarf eats 1 food per day, travellers included. If the rations
             run out, dwarves are fed in roster order. Unfed dwarves go hungry
-            and produce 1 less until they are fed again.
+            and produce 1 less until they are fed again.<br />
+            An equipped tool adds 1 to its dwarf's daily output.
           </p>
           {hungryCount > 0 ? (
             <p className="food-rule short">

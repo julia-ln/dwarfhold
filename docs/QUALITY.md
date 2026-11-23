@@ -69,3 +69,6 @@ Dwarfhold is a small single-player browser game, built and maintained by a two-p
 | D1 | "1 less" instead of "half": no rounding, adds up cleanly with the +1 tool bonus (D2) | Q2, Q3 | README "Food shortage" |
 | D1 | Hungry or absent dwarves cannot travel (`canTravel`), enforced in the provider | Q1 | `canTravel`, test "only lets present, fed dwarves travel" |
 | D1 | The ledger shows real totals from `dailyProduction`; shortage messages are derived, not stored | Q1, Q3 | `ColonyPage.tsx` |
+| D2 | Tools in stores (`resources.tools`) + `hasTool` per dwarf; the total is derived, never stored | Q1 | `equipTool`/`returnTool`, test "moves one tool…" |
+| D2 | One tool type, +1 on all local jobs; additive with hunger | Q2, Q3 | `dailyOutput`, test "cancel out" |
+| D2 | Weapon: 2 wood + 3 stone; one recipe table with one `canAfford` check (also fixes negative stone) | Q1, Q2 | `recipes`, `craft`, test "does not forge…" |
