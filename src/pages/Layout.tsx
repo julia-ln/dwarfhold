@@ -3,7 +3,8 @@ import { ResourceBar } from "../components/ResourceBar";
 import { useColony } from "../state/ColonyContext";
 
 export function Layout() {
-  const { colony, paused, togglePaused, resetGame } = useColony();
+  const { colony, paused, togglePaused, expeditionPending, resetGame } =
+    useColony();
   const equippedTools = colony.dwarves.filter((dwarf) => dwarf.hasTool).length;
 
   return (
@@ -48,6 +49,10 @@ export function Layout() {
         <span>{paused ? "The hold is resting" : "⚙ Simulation active"}</span>
         <button
           className="reset-button"
+          disabled={expeditionPending}
+          title={
+            expeditionPending ? "Wait until the expedition returns" : undefined
+          }
           onClick={() => {
             if (
               window.confirm(

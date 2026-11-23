@@ -19,9 +19,8 @@ import {
   craftDays,
   hasNewcomerJoined,
   NEWCOMER_DESTINATION,
-  welcomeNewcomer,
   RAID_DESTINATION,
-  raidAfterExpedition,
+  completeExpedition,
 } from "../simulation";
 import type { Activity, ColonyState, JobType } from "../types";
 import { ColonyContext, type ColonyContextValue } from "./ColonyContext";
@@ -218,14 +217,9 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
         destination === NEWCOMER_DESTINATION && !hasNewcomerJoined(colony);
 
       setColony((current) =>
-        raidAfterExpedition(
-          welcomeNewcomer(
-            endExpedition(current, dwarfId, result.rewards ?? {}),
-            destination,
-          ),
-          destination,
-        ),
+        completeExpedition(current, dwarfId, result.rewards ?? {}, destination),
       );
+
       addActivity(result.message, "good");
       if (newcomerArrives) {
         addActivity(
@@ -253,6 +247,7 @@ export function ColonyProvider({ children }: { children: ReactNode }) {
   }
 
   function resetGame() {
+    if (expeditionInFlight.current) return;
     setColony(initialState);
     setActivities([welcome]);
   }

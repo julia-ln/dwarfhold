@@ -40,3 +40,6 @@
 .raid-report.looted h2 { color: #d47459; }
 .raid-report.defended { border-color: #7fb77e; }
 .raid-report.defended h2 { color: #7fb77e; }
+
+.reset-button:disabled { opacity: .4; cursor: default; }
+.reset-button:disabled:hover { color: #8f775a; border-color: #554634; }
