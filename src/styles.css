@@ -25,3 +25,5 @@
 .portrait i.crafting { background: #d9a34f; }
 .forge p.forge-status { min-height: 16px; font: 600 12px "Barlow Condensed"; color: #d9a34f; }
 .forge p.forge-status.warning { color: #d47459; }
+.reset-button { background: transparent; border: 1px solid #554634; color: #8f775a; font: 600 10px "Barlow Condensed"; letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px; cursor: pointer; }
+.reset-button:hover { color: #d47459; border-color: #d47459; }

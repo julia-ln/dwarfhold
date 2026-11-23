@@ -3,7 +3,7 @@ import { ResourceBar } from "../components/ResourceBar";
 import { useColony } from "../state/ColonyContext";
 
 export function Layout() {
-  const { colony, paused, togglePaused } = useColony();
+  const { colony, paused, togglePaused, resetGame } = useColony();
   const equippedTools = colony.dwarves.filter((dwarf) => dwarf.hasTool).length;
 
   return (
@@ -18,13 +18,11 @@ export function Layout() {
             </h1>
           </div>
         </div>
-
         <div className="hold-title">
           <small>COLONY</small>
           <strong>STONEHOME</strong>
           <span>Founded beneath Emberpeak</span>
         </div>
-
         <div className="day">
           <small>DEEP DAY</small>
           <strong>{colony.day}</strong>
@@ -48,6 +46,20 @@ export function Layout() {
         <span>{colony.forgeTask ? "🔥 Forge: burning" : "Forge: cold"}</span>
         <span>Next deep day in ~8 seconds</span>
         <span>{paused ? "The hold is resting" : "⚙ Simulation active"}</span>
+        <button
+          className="reset-button"
+          onClick={() => {
+            if (
+              window.confirm(
+                "Start a new settlement? All progress will be lost.",
+              )
+            ) {
+              resetGame();
+            }
+          }}
+        >
+          New settlement
+        </button>
       </footer>
     </main>
   );

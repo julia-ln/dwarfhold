@@ -48,7 +48,7 @@ export function ForgePage() {
         <label className="crafter">
           Crafter
           <select
-            value={crafterId}
+            value={task ? task.crafterId : crafterId}
             disabled={task !== null}
             onChange={(event) => setCrafterId(event.target.value)}
           >
